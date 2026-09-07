@@ -10,12 +10,13 @@
      service-worker update.
    ===================================================================== */
 
-const CACHE_NAME = "qlogpro-offline-v13";
+const CACHE_NAME = "qlogpro-offline-v14";
 
 const PRECACHE_URLS = [
   "./",
   "./index.html",
   "./qlog-export-helper.js",
+  "./qlog-scope.js",
   "./qlog-ui-overhaul.css",
   "./qlog-ui-overhaul.js",
   "./manifest.json",
