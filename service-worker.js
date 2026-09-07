@@ -10,7 +10,7 @@
      service-worker update.
    ===================================================================== */
 
-const CACHE_NAME = "qlogpro-offline-v9";
+const CACHE_NAME = "qlogpro-offline-v10";
 
 const PRECACHE_URLS = [
   "./",
@@ -35,6 +35,7 @@ const PRECACHE_URLS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./libs/face-api.min.js",
+  "./libs/jszip.min.js",
   "./libs/html2pdf.bundle.min.js",
   "./libs/jsQR.js",
   "./libs/qrcode.min.js",

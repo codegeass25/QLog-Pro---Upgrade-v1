@@ -13,7 +13,8 @@
 <meta name="theme-color" content="#2563eb">
 
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
-<!-- SheetJS for Excel -->
+<!-- JSZip + SheetJS for Excel (JSZip is used to preserve real Excel data-validation dropdowns) -->
+<script src="./libs/jszip.min.js"></script>
 <script src="./libs/xlsx.full.min.js"></script>
 <!-- QRCode.js -->
 <script src="./libs/qrcode.min.js"></script>
@@ -451,6 +452,19 @@ button:disabled{ opacity:.55; cursor:not-allowed; box-shadow:none; }
   box-shadow: var(--shadow-md), 0 0 0 3px rgba(34,211,238,.15) !important;
   outline: 1px solid rgba(34,211,238,.25);
 }
+#visitorVideoWrap{ position:relative; overflow:hidden; }
+.visitor-face-guide{
+  position:absolute; left:18%; top:8%; width:64%; height:82%;
+  border:2px dashed rgba(255,255,255,.92); border-radius:42% 42% 38% 38%;
+  box-shadow:0 0 0 999px rgba(15,23,42,.12), inset 0 0 0 1px rgba(15,23,42,.35);
+  pointer-events:none; z-index:2;
+}
+.visitor-face-guide span{
+  position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+  background:rgba(15,23,42,.72); color:#fff; border-radius:999px; padding:3px 8px;
+  font-size:10px; font-weight:700; letter-spacing:.08em; white-space:nowrap;
+}
+#faceOverlay{ z-index:3; }
 .face-hud{
   display:flex; align-items:center; gap:10px;
   margin-top: 8px;
@@ -982,7 +996,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
     <button onclick="exportClientInventoryHTML()">📥 Export Inventory with QR</button>
     <button style="background:#64748b;" onclick="downloadClientInventoryTemplate()">⬇ Download Template</button>
     <hr><h4>📥 Import Clients from Excel</h4>
-    <p style="margin:0 0 8px; font-size:13px; color:#64748b;">Required columns: <b>ID, Name, Grade, Section, Category</b>. Use the Download Template button above to get a ready-to-fill file.</p>
+    <p style="margin:0 0 8px; font-size:13px; color:#64748b;">Required columns: <b>ID, Name, Grade, Section, Category</b>. The generated template includes a validated Category dropdown that matches QLog exactly.</p>
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
         <input type="file" id="excelFile" accept=".xlsx,.xls" style="width:auto;"><button onclick="importExcel()">Import Excel</button>
     </div>
@@ -1010,7 +1024,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
     <div class="card">
     <h3>Visitor Registration</h3>
     <div style="margin-bottom: 5px;">
-        <input id="visitorName" placeholder="Full Name (captured automatically from Valid ID / face recognition)" readonly oninput="onVisitorNameInput()" onchange="onVisitorNameInput()" onblur="onVisitorNameInput()">
+        <input id="visitorName" placeholder="Full Name (scan/enter first, then correct here if needed)" autocomplete="off" oninput="onVisitorNameInput()" onchange="onVisitorNameInput()" onblur="onVisitorNameInput()">
         <div class="autofill-note" id="visitorNameSource">✓ Captured automatically</div>
     </div>
     <select id="visitorReason" onchange="onVisitorReasonChanged()">
@@ -1018,7 +1032,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
     <option>Meet with a Teacher</option><option>Meet with the Principal</option><option>Parent-Teacher Conference</option><option>Pick Up / Drop Off a Student</option><option>Submit or Claim School Documents</option><option>Enrollment / Admission Inquiry</option><option>Official Business (DepEd, LGU, or Other Agencies)</option><option>Delivery of Supplies / Equipment</option><option>Repair / Maintenance Services</option><option>Attend a School Event or Program</option><option>Others</option></select>
     <input id="visitorReasonOther" placeholder="Please specify" style="display:none;" onchange="onVisitorReasonChanged()" onblur="onVisitorReasonChanged()">
     <br><br>
-    <div class="video-wrapper" id="visitorVideoWrap" style="display:none; max-width:360px;"><video id="visitorCamera" autoplay playsinline muted style="width:100%; display:block; border-radius:12px;"></video><canvas id="faceOverlay" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;"></canvas></div>
+    <div class="video-wrapper" id="visitorVideoWrap" style="display:none; max-width:360px;"><video id="visitorCamera" autoplay playsinline muted style="width:100%; display:block; border-radius:12px;"></video><div class="visitor-face-guide"><span>FACE AREA</span></div><canvas id="faceOverlay" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;"></canvas></div>
     <div class="face-hud" id="faceHud" style="display:none;"><span class="dot"></span><span id="faceHudText">Initializing AI face recognition…</span><div class="bar"><span id="faceHudBar"></span></div></div>
     <canvas id="visitorCanvas" style="display:none"></canvas>
     <input type="hidden" id="visitorPhoto">
@@ -1448,18 +1462,26 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
 <div id="equipRegistryModal" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 style="margin:0;">🗂 Equipment Registry</h3>
+            <div><h3 style="margin:0;">🗂 ICS-Aligned Equipment Registry</h3><div style="font-size:12px;color:#64748b;margin-top:3px;">COA GAM Appendix 59 core fields for semi-expendable property, while preserving QLog borrowing controls.</div></div>
             <button class="modal-close" onclick="closeEquipRegistryModal()">Close</button>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
-            <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">Equipment ID / QR Code</label><input id="eqNewId" placeholder="e.g. SCI-MICRO-001"></div>
-            <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">Equipment Name</label><input id="eqNewName" placeholder="e.g. Compound Microscope"></div>
-            <div style="flex:1; min-width:130px;"><label style="font-size:13px;font-weight:600;">Category</label><input id="eqNewCategory" list="eqCategoryList" placeholder="e.g. Laboratory Apparatus"><datalist id="eqCategoryList"></datalist></div>
-            <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">Assigned Unit</label><input id="eqNewUnit" list="eqUnitList" placeholder="e.g. Science Laboratory"><datalist id="eqUnitList"></datalist></div>
-            <div style="flex:1; min-width:120px;"><label style="font-size:13px;font-weight:600;">Condition</label>
-                <select id="eqNewCondition"><option value="Good">Good</option><option value="Fair">Fair</option><option value="With Minor Defect">With Minor Defect</option></select>
+            <div style="flex:1; min-width:160px;"><label style="font-size:13px;font-weight:600;">Inventory Item No. / QR Code *</label><input id="eqNewId" placeholder="e.g. SEMI-ICT-2026-001"></div>
+            <div style="flex:2; min-width:220px;"><label style="font-size:13px;font-weight:600;">Description / Equipment Name *</label><input id="eqNewName" placeholder="e.g. Laptop Computer, Model…, Serial…"></div>
+            <div style="flex:1; min-width:170px;"><label style="font-size:13px;font-weight:600;">COA Semi-Expendable Category *</label><input id="eqNewCategory" list="eqCategoryList" placeholder="e.g. ICT Equipment"><datalist id="eqCategoryList"></datalist></div>
+            <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">Serial No.</label><input id="eqNewSerialNo" placeholder="Serial number, if any"></div>
+            <div style="flex:.7; min-width:100px;"><label style="font-size:13px;font-weight:600;">Quantity *</label><input id="eqNewQuantity" type="number" min="1" step="1" value="1"></div>
+            <div style="flex:.8; min-width:110px;"><label style="font-size:13px;font-weight:600;">Unit *</label><input id="eqNewMeasureUnit" list="eqMeasureUnitList" value="unit" placeholder="unit"><datalist id="eqMeasureUnitList"></datalist></div>
+            <div style="flex:1; min-width:130px;"><label style="font-size:13px;font-weight:600;">Unit Cost (₱) *</label><input id="eqNewUnitCost" type="number" min="0" step="0.01" placeholder="0.00"></div>
+            <div style="flex:.9; min-width:130px;"><label style="font-size:13px;font-weight:600;">Useful Life (years) *</label><input id="eqNewUsefulLife" type="number" min="2" step="1" placeholder="e.g. 5"></div>
+            <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">ICS No.</label><input id="eqNewIcsNo" placeholder="ICS control no."></div>
+            <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">Fund Cluster</label><input id="eqNewFundCluster" placeholder="e.g. 01"></div>
+            <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">Date Acquired</label><input id="eqNewDateAcquired" type="date"></div>
+            <div style="flex:1; min-width:170px;"><label style="font-size:13px;font-weight:600;">Assigned Unit *</label><input id="eqNewUnit" list="eqUnitList" placeholder="e.g. Science Laboratory"><datalist id="eqUnitList"></datalist></div>
+            <div style="flex:1; min-width:130px;"><label style="font-size:13px;font-weight:600;">Condition</label>
+                <select id="eqNewCondition"><option value="Good">Good</option><option value="Fair">Fair</option><option value="With Minor Defect">With Minor Defect</option><option value="For Maintenance">For Maintenance</option><option value="Damaged">Damaged</option></select>
             </div>
-            <button style="background:#7c3aed;" onclick="saveEquipmentItem()">+ Save Equipment</button>
+            <button style="background:#7c3aed;" onclick="saveEquipmentItem()">+ Save ICS Item</button>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center;">
             <input id="eqRegistrySearch" placeholder="Search equipment ID, name, category, unit" onkeyup="renderEquipRegistry()" style="flex:2; margin:0;">
@@ -1481,12 +1503,12 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
             <button style="margin:0; background:#64748b;" onclick="downloadEquipmentTemplate()">⬇ Download Template</button>
             <input type="file" id="eqImportFile" accept=".xlsx,.xls" style="width:auto; margin:0;">
             <button style="margin:0; background:#0ea5e9;" onclick="importEquipmentExcel()">📥 Bulk Import</button>
-            <span style="font-size:12px; color:#64748b;">Required columns: ID, Name, Category, AssignedUnit, Condition</span>
+            <span style="font-size:12px; color:#64748b;">ICS template: InventoryItemNo, Description, Quantity, Unit, UnitCost, EstimatedUsefulLife, Category, AssignedUnit (+ optional ICS metadata). Old ID/Name templates remain supported.</span>
         </div>
         <div id="eqImportResult" style="margin-top:10px; font-size:13px; font-weight:600;"></div>
         <div class="full-table" style="margin-top:12px;">
             <table>
-                <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Assigned Unit</th><th>Condition</th><th>Status</th><th>Current Borrower</th><th>QR</th><th>Action</th></tr></thead>
+                <thead><tr><th>Inventory Item No.</th><th>Description</th><th>Category</th><th>Qty</th><th>Unit</th><th>Unit Cost</th><th>Total Cost</th><th>Useful Life</th><th>ICS No.</th><th>Assigned Unit</th><th>Condition</th><th>Status</th><th>Current Borrower</th><th>QR / History</th><th>Action</th></tr></thead>
                 <tbody id="eqRegistryTbl"></tbody>
             </table>
         </div>
@@ -1663,10 +1685,75 @@ function logAudit(action, details) {
     localStorage.setItem('auditLogs', JSON.stringify(auditLogs));
 }
 
+var CLIENT_CATEGORIES = ['STUDENT','TEACHING','NON-TEACHING','GUARD','UTILITY','CANTEEN PERSONNEL'];
+
+function normalizeClientCategory(v){
+    var raw = String(v === undefined || v === null ? '' : v).trim().toUpperCase();
+    raw = raw.replace(/_/g, ' ').replace(/\s+/g, ' ');
+    var compact = raw.replace(/[\s-]/g, '');
+    var aliases = {
+        'STUDENT':'STUDENT',
+        'TEACHING':'TEACHING', 'TEACHER':'TEACHING', 'FACULTY':'TEACHING',
+        'NONTEACHING':'NON-TEACHING', 'NONTEACHINGPERSONNEL':'NON-TEACHING',
+        'GUARD':'GUARD', 'SECURITY':'GUARD', 'SECURITYGUARD':'GUARD',
+        'UTILITY':'UTILITY', 'UTILITYPERSONNEL':'UTILITY',
+        'CANTEENPERSONNEL':'CANTEEN PERSONNEL', 'CANTEEN':'CANTEEN PERSONNEL'
+    };
+    return aliases[compact] || (CLIENT_CATEGORIES.indexOf(raw) !== -1 ? raw : '');
+}
+
+function _xmlEsc(v){
+    return String(v === undefined || v === null ? '' : v)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+/* SheetJS CE 0.18.x reads/writes workbook data but does not emit Excel list
+   validation. Patch the generated worksheet XML locally with JSZip so the
+   downloaded .xlsx contains REAL dropdown validation in Excel/LibreOffice. */
+async function downloadWorkbookWithValidations(wb, sheetName, validations, filename){
+    if(typeof XLSX === 'undefined') throw new Error('Local Excel library not loaded.');
+    var data = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+    if(typeof JSZip === 'undefined' || !validations || !validations.length){
+        var fallback = new Blob([data], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        var fa = document.createElement('a'); fa.href = URL.createObjectURL(fallback); fa.download = filename;
+        document.body.appendChild(fa); fa.click(); fa.remove(); setTimeout(function(){ URL.revokeObjectURL(fa.href); }, 1500);
+        return;
+    }
+    var zip = await JSZip.loadAsync(data);
+    var sheetIndex = Math.max(0, wb.SheetNames.indexOf(sheetName)) + 1;
+    var path = 'xl/worksheets/sheet' + sheetIndex + '.xml';
+    var entry = zip.file(path);
+    if(!entry) throw new Error('Worksheet package entry not found: ' + path);
+    var xml = await entry.async('string');
+    var rules = validations.map(function(v){
+        var values = (v.values || []).map(function(x){ return String(x).replace(/"/g,'""'); }).join(',');
+        return '<dataValidation type="list" allowBlank="' + (v.allowBlank === false ? '0' : '1') +
+            '" showInputMessage="1" showErrorMessage="1" errorStyle="stop" sqref="' + _xmlEsc(v.sqref) +
+            '" promptTitle="' + _xmlEsc(v.promptTitle || 'Choose from list') +
+            '" prompt="' + _xmlEsc(v.prompt || 'Select a value from the dropdown list.') +
+            '" errorTitle="' + _xmlEsc(v.errorTitle || 'Invalid value') +
+            '" error="' + _xmlEsc(v.error || 'Please choose a value from the dropdown list.') +
+            '"><formula1>&quot;' + _xmlEsc(values) + '&quot;</formula1></dataValidation>';
+    }).join('');
+    var dvXml = '<dataValidations count="' + validations.length + '">' + rules + '</dataValidations>';
+    var anchors = ['<hyperlinks','<printOptions','<pageMargins','<pageSetup','<headerFooter','<rowBreaks','<colBreaks','<customProperties','<cellWatches','<ignoredErrors','<smartTags','<drawing','<legacyDrawing','<picture','<oleObjects','<controls','<webPublishItems','<tableParts','<extLst','</worksheet>'];
+    var pos = -1;
+    anchors.forEach(function(a){ var i = xml.indexOf(a); if(i !== -1 && (pos === -1 || i < pos)) pos = i; });
+    if(pos < 0) throw new Error('Could not locate worksheet XML insertion point.');
+    xml = xml.slice(0,pos) + dvXml + xml.slice(pos);
+    zip.file(path, xml);
+    var blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{level:6} });
+    var a = document.createElement('a');
+    var href = URL.createObjectURL(blob); a.href = href; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(href); }, 1500);
+}
+
 var dynamicFilterData = JSON.parse(localStorage.getItem('dynamicFilterData')) || {
     'Grade Level': ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'],
     'Section': [],
-    'Category': ['Student', 'Teaching', 'Non-teaching', 'Guard', 'Utility', 'Canteen Personnel']
+    'Category': CLIENT_CATEGORIES.slice()
 };
 
 function updateSecondaryFilter() {
@@ -2460,6 +2547,20 @@ var _lastFaceMatchName = null;
 var _stableMatchCounter = 0;
 var FACE_MATCH_THRESHOLD = 0.52;   // euclidean distance (lower = more similar); 0.5 is standard for face-api.js
 var FACE_MATCH_STABLE_FRAMES = 3;  // require N consecutive confident matches before auto-fill
+var VISITOR_FACE_MIN_DETECTION_SCORE = 0.68;
+var VISITOR_FACE_MIN_WIDTH_RATIO = 0.17;
+var VISITOR_FACE_MAX_WIDTH_RATIO = 0.76;
+var VISITOR_FACE_MIN_HEIGHT_RATIO = 0.22;
+var VISITOR_FACE_MAX_HEIGHT_RATIO = 0.88;
+var VISITOR_FACE_EDGE_MARGIN_RATIO = 0.018;
+// Keep the detected face inside the visible FACE AREA guide (with a small tolerance).
+var VISITOR_FACE_GUIDE_LEFT_RATIO = 0.16;
+var VISITOR_FACE_GUIDE_RIGHT_RATIO = 0.84;
+var VISITOR_FACE_GUIDE_TOP_RATIO = 0.06;
+var VISITOR_FACE_GUIDE_BOTTOM_RATIO = 0.92;
+var VISITOR_FACE_MIN_SHARPNESS = 24;
+var VISITOR_FACE_QUALITY_STABLE_FRAMES = 2;
+var _visitorFaceGuidanceToastAt = 0;
 
 /* ---------- Offline Valid ID / OCR verification configuration ----------
    All thresholds are local; nothing here contacts the network. */
@@ -2569,128 +2670,147 @@ function _euclidean(a, b){
     var s = 0; for (var i=0;i<a.length;i++){ var d = a[i]-b[i]; s += d*d; } return Math.sqrt(s);
 }
 
+function _visitorFaceToast(message){
+    var now=Date.now();
+    if(now-_visitorFaceGuidanceToastAt<3200) return;
+    _visitorFaceGuidanceToastAt=now;
+    toast('📷 '+message,'yellow',2800);
+}
+
+function _visitorFaceSharpness(video, box){
+    try{
+        var c=document.createElement('canvas'); c.width=96; c.height=96;
+        var ctx=c.getContext('2d',{willReadFrequently:true});
+        var sx=Math.max(0,box.x), sy=Math.max(0,box.y), sw=Math.min(video.videoWidth-sx,box.width), sh=Math.min(video.videoHeight-sy,box.height);
+        if(sw<10||sh<10) return 0;
+        ctx.drawImage(video,sx,sy,sw,sh,0,0,96,96);
+        var d=ctx.getImageData(0,0,96,96).data, g=new Float32Array(96*96);
+        for(var i=0,j=0;i<d.length;i+=4,j++) g[j]=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+        var sum=0,sum2=0,n=0;
+        for(var y=1;y<95;y++) for(var x=1;x<95;x++){
+            var k=y*96+x, lap=4*g[k]-g[k-1]-g[k+1]-g[k-96]-g[k+96];
+            sum+=lap; sum2+=lap*lap; n++;
+        }
+        var mean=sum/Math.max(1,n); return (sum2/Math.max(1,n))-mean*mean;
+    }catch(e){ return VISITOR_FACE_MIN_SHARPNESS+1; }
+}
+
+function _assessVisitorFaceQuality(video, det){
+    var box=det&&det.detection&&det.detection.box, score=det&&det.detection&&det.detection.score;
+    if(!box) return {ok:false,message:'Please position your entire face clearly inside the Camera Box.'};
+    var vw=video.videoWidth||1,vh=video.videoHeight||1;
+    if(typeof score==='number' && score<VISITOR_FACE_MIN_DETECTION_SCORE) return {ok:false,message:'Your face is not clear enough. Please face the camera and hold still.'};
+    var mx=vw*VISITOR_FACE_EDGE_MARGIN_RATIO,my=vh*VISITOR_FACE_EDGE_MARGIN_RATIO;
+    if(box.x<=mx||box.y<=my||(box.x+box.width)>=(vw-mx)||(box.y+box.height)>=(vh-my))
+        return {ok:false,message:'Please position your entire face inside the Camera Box.'};
+    if(box.x < vw*VISITOR_FACE_GUIDE_LEFT_RATIO || box.y < vh*VISITOR_FACE_GUIDE_TOP_RATIO ||
+       (box.x+box.width) > vw*VISITOR_FACE_GUIDE_RIGHT_RATIO || (box.y+box.height) > vh*VISITOR_FACE_GUIDE_BOTTOM_RATIO)
+        return {ok:false,message:'Please center your entire face inside the Camera Box.'};
+    var wr=box.width/vw,hr=box.height/vh;
+    if(wr<VISITOR_FACE_MIN_WIDTH_RATIO||hr<VISITOR_FACE_MIN_HEIGHT_RATIO)
+        return {ok:false,message:'Please move a little closer and keep your entire face inside the Camera Box.'};
+    if(wr>VISITOR_FACE_MAX_WIDTH_RATIO||hr>VISITOR_FACE_MAX_HEIGHT_RATIO)
+        return {ok:false,message:'Please move a little farther back so your entire face fits inside the Camera Box.'};
+    var sharp=_visitorFaceSharpness(video,box);
+    if(sharp<VISITOR_FACE_MIN_SHARPNESS)
+        return {ok:false,message:'Your face appears unclear. Please hold still and keep your entire face inside the Camera Box.'};
+    return {ok:true,message:'Face clear',sharpness:sharp,score:score||0};
+}
+
 async function _faceRecognitionTick(){
-    if (!faceApiReady) return;
-    var video = document.getElementById('visitorCamera');
-    var overlay  = document.getElementById('faceOverlay');
-    if (!video || !video.videoWidth) return;
-
-    var st = visitorRegistrationState;
-    if (st.logged) return;
-
+    if(!faceApiReady) return;
+    var video=document.getElementById('visitorCamera'), overlay=document.getElementById('faceOverlay');
+    if(!video||!video.videoWidth) return;
+    var st=visitorRegistrationState; if(st.logged) return;
     var dets;
     try{
-        dets = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({inputSize: 320, scoreThreshold: 0.55}))
-                            .withFaceLandmarks().withFaceDescriptors();
+        dets=await faceapi.detectAllFaces(video,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.55})).withFaceLandmarks().withFaceDescriptors();
     }catch(e){ return; }
-    dets = dets || [];
-
-    // Draw overlay
-    if (overlay){
+    dets=dets||[];
+    if(overlay){
         try{
-            var ctx = overlay.getContext('2d');
-            overlay.width = video.videoWidth;
-            overlay.height = video.videoHeight;
-            ctx.clearRect(0,0,overlay.width, overlay.height);
-            ctx.lineWidth = 3;
-            for (var b=0;b<dets.length;b++){
-                var box = dets[b].detection.box;
-                ctx.strokeStyle = (dets.length === 1) ? '#22d3ee' : '#f59e0b';
-                ctx.strokeRect(box.x, box.y, box.width, box.height);
-            }
-        }catch(e){}
+            var ctx=overlay.getContext('2d'); overlay.width=video.videoWidth; overlay.height=video.videoHeight; ctx.clearRect(0,0,overlay.width,overlay.height); ctx.lineWidth=3;
+            for(var b=0;b<dets.length;b++){ var bx=dets[b].detection.box; ctx.strokeStyle=(dets.length===1)?'#22d3ee':'#f59e0b'; ctx.strokeRect(bx.x,bx.y,bx.width,bx.height); }
+        }catch(_e){}
     }
-
-    // MULTIPLE FACE PROTECTION
-    if (dets.length > 1){
-        st.faceDetected = false;
-        st.faceDescriptor = null;
-        _stableMatchCounter = 0;
-        _setFaceHud('error', '\u26a0 Multiple faces detected \u2014 only the visitor should be visible.', 0);
-        setVisitorFlowStatus('\u26a0 <b>MULTIPLE FACES DETECTED</b><br>Please make sure only the visitor is visible in the camera.', 'warn');
+    if(dets.length>1){
+        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false; st.faceQualityStableFrames=0; st.faceQualifiedAfterReason=false; _stableMatchCounter=0;
+        _setFaceHud('error','⚠ Multiple faces detected — only the visitor should be visible.',0);
+        setVisitorFlowStatus('⚠ <b>MULTIPLE FACES DETECTED</b><br>Please make sure only the visitor is visible in the Camera Box.','warn');
+        if(st.reason) _visitorFaceToast('Only one visitor face should be inside the Camera Box.');
         return;
     }
-
-    if (dets.length === 0){
-        st.faceDetected = false;
-        st.faceDescriptor = null;
-        _stableMatchCounter = 0;
-        _setFaceHud('detecting', 'Searching for a face\u2026', 20);
-        if (st.reason && !st.logged){
-            setVisitorFlowStatus('\u26a0 <b>FACE REQUIRED</b><br>Please look at the camera. The visitor will be logged automatically once the face is detected.', 'warn');
+    if(dets.length===0){
+        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false; st.faceQualityStableFrames=0; st.faceQualifiedAfterReason=false; _stableMatchCounter=0;
+        _setFaceHud('detecting','Searching for a complete face…',18);
+        if(st.reason&&!st.logged){
+            setVisitorFlowStatus('⚠ <b>FULL FACE REQUIRED</b><br>Please position your entire face clearly inside the Camera Box.','warn');
+            _visitorFaceToast('Please position your entire face clearly inside the Camera Box.');
         }
         return;
     }
-
-    var det = dets[0];
-    st.faceDetected = true;
-    st.faceDescriptor = det.descriptor;
-    if (!st.faceImage) { try { st.faceImage = _captureVisitorPhoto(); } catch(e){} }
-
-    // Match against registered visitors
-    var best = {dist: Infinity, name: null};
-    var second = Infinity;
-    for (var i=0;i<faceDescriptorCache.length;i++){
-        var d = _euclidean(det.descriptor, faceDescriptorCache[i].descriptor);
-        if (d < best.dist){ second = best.dist; best = {dist:d, name: faceDescriptorCache[i].name}; }
-        else if (d < second){ second = d; }
+    var det=dets[0], quality=_assessVisitorFaceQuality(video,det);
+    if(!quality.ok){
+        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false; st.faceQualityStableFrames=0; st.faceQualifiedAfterReason=false; _stableMatchCounter=0;
+        _setFaceHud('error',quality.message,0);
+        setVisitorFlowStatus('⚠ <b>FACE NOT READY</b><br>'+quality.message,'warn');
+        if(st.reason) _visitorFaceToast(quality.message);
+        return;
     }
-    var confidence = Math.max(0, Math.min(1, 1 - (best.dist / 0.9)));
-    var margin = (second === Infinity) ? 0.1 : (second - best.dist);
-    var matched = best.name && best.dist <= FACE_MATCH_THRESHOLD && margin >= 0.04;
+    st.faceQualityStableFrames=(st.faceQualityStableFrames||0)+1;
+    if(st.faceQualityStableFrames<VISITOR_FACE_QUALITY_STABLE_FRAMES){
+        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false;
+        _setFaceHud('detecting','Face found — hold still for verification…',70);
+        if(st.reason) setVisitorFlowStatus('📷 Face found. Please hold still inside the Camera Box…','');
+        return;
+    }
+    st.faceQualityOk=true; st.faceDetected=true; st.faceDescriptor=det.descriptor;
+    if(st.reason && st.reasonSelectedAt && Date.now()>=st.reasonSelectedAt){ st.faceQualifiedAfterReason=true; }
+    if(!st.faceImage){ try{ st.faceImage=_captureVisitorPhoto(); }catch(_e){} }
 
-    if (matched){
+    var best={dist:Infinity,name:null},second=Infinity;
+    for(var i=0;i<faceDescriptorCache.length;i++){
+        var d=_euclidean(det.descriptor,faceDescriptorCache[i].descriptor);
+        if(d<best.dist){second=best.dist;best={dist:d,name:faceDescriptorCache[i].name};} else if(d<second){second=d;}
+    }
+    var confidence=Math.max(0,Math.min(1,1-(best.dist/0.9))), margin=(second===Infinity)?0.1:(second-best.dist);
+    var matched=best.name&&best.dist<=FACE_MATCH_THRESHOLD&&margin>=0.04;
+    if(matched){
         _stableMatchCounter++;
-        _setFaceHud('detecting', 'Matching: ' + best.name + ' (' + (confidence*100).toFixed(0) + '%)', confidence*100);
-        if (_stableMatchCounter >= FACE_MATCH_STABLE_FRAMES){
-            if (!st.faceRecognized){
-                st.faceRecognized = true;
-                st.mode = 'RETURNING';
-                st.faceRegistered = true;
-                _lastFaceMatchName = best.name;
-                _setFaceHud('matched', '\u2713 ' + best.name + ' (' + (confidence*100).toFixed(0) + '%)', confidence*100);
-                toast('\U0001f916 Visitor recognized: ' + best.name, 'green');
-                if (!st.idVerified && !st.manualNoId){
-                    var prevSource = getVisitorNameSource(best.name);
-                    if (prevSource === 'ID_OCR'){
-                        // Name was originally established through a successful ID OCR:
-                        // reuse it. No ID, no OCR.
-                        st.identityVerificationMethod = null;
-                        st.requiresIdRecheck = false;
-                        st.nameSource = 'ID_OCR';
-                        setVisitorName(best.name, 'AI face recognition (ID-verified profile)', 'face');
-                        setVisitorFlowStatus('\u2713 Visitor identified: <b>' + best.name + '</b> (ID-verified profile). Select a <b>Reason for Visit</b> to log automatically.', 'ok');
-                        try { closeValidIdScreen(); } catch(e){}
-                    } else {
-                        // Name was originally entered manually -> require an ID this time.
-                        st.nameSource = 'MANUAL';
-                        _lastFaceMatchName = best.name;
-                        _requireIdRecheckForReturningVisitor();
-                    }
-                } else {
-                    setVisitorFlowStatus('\u2713 Visitor identified: <b>' + (st.name || best.name) + '</b>. Select a <b>Reason for Visit</b> to log automatically.', 'ok');
+        _setFaceHud('detecting','Matching: '+best.name+' ('+(confidence*100).toFixed(0)+'%)',confidence*100);
+        if(_stableMatchCounter>=FACE_MATCH_STABLE_FRAMES){
+            if(!st.faceRecognized){
+                st.faceRecognized=true; st.mode='RETURNING'; st.faceRegistered=true; _lastFaceMatchName=best.name;
+                _setFaceHud('matched','✓ '+best.name+' ('+(confidence*100).toFixed(0)+'%)',confidence*100);
+                toast('🤖 Visitor recognized: '+best.name,'green');
+                if(!st.idVerified&&!st.manualNoId){
+                    var prevSource=getVisitorNameSource(best.name);
+                    if(prevSource==='ID_OCR'){
+                        st.identityVerificationMethod=null; st.requiresIdRecheck=false; st.nameSource='ID_OCR';
+                        setVisitorName(best.name,'AI face recognition (ID-verified profile)','face');
+                        setVisitorFlowStatus('✓ Visitor identified: <b>'+best.name+'</b> (ID-verified profile). Select a <b>Reason for Visit</b>; QLog will then require a fresh clear face before saving.','ok');
+                        try{closeValidIdScreen();}catch(_e){}
+                    }else{ st.nameSource='MANUAL'; _lastFaceMatchName=best.name; _requireIdRecheckForReturningVisitor(); }
+                }else{
+                    setVisitorFlowStatus('✓ Visitor identified: <b>'+(st.name||best.name)+'</b>. Select a <b>Reason for Visit</b>; a fresh clear face is required before saving.','ok');
                 }
-            } else {
-                _setFaceHud('matched', '\u2713 ' + best.name, confidence*100);
-            }
+            }else _setFaceHud('matched','✓ '+best.name,confidence*100);
         }
-    } else {
-        _stableMatchCounter = 0;
-        if (st.idVerified || st.manualNoId){
-            _setFaceHud('detecting', 'Face captured for registration \u2014 ' + (st.name || 'new visitor'), 70);
-            setVisitorFlowStatus('\u2713 Face captured for <b>' + (st.name || 'visitor') + '</b>. Select a <b>Reason for Visit</b> to log automatically.', 'ok');
-        } else {
+    }else{
+        _stableMatchCounter=0;
+        if(st.idVerified||st.manualNoId){
+            _setFaceHud('detecting','Clear face verified for '+(st.name||'visitor'),85);
+            if(st.reason) setVisitorFlowStatus('✓ Clear full face verified for <b>'+(st.name||'visitor')+'</b>. Preparing automatic log…','ok');
+            else setVisitorFlowStatus('✓ Face ready for <b>'+(st.name||'visitor')+'</b>. Select a <b>Reason for Visit</b>.','ok');
+        }else{
             _unknownFaceStreak++;
-            _setFaceHud('detecting', 'Unrecognized visitor \u2014 identity verification required', 40);
-            if (_unknownFaceStreak >= 3 && !st.idVerified && !st.manualNoId && !_idScanActive &&
-                !document.getElementById('validIdOverlay').classList.contains('open')){
-                setVisitorFlowStatus('Visitor not recognized. Choose <b>PRESENT VALID ID</b> or <b>NO VALID ID AVAILABLE</b>.', 'warn');
+            _setFaceHud('detecting','Unrecognized visitor — identity verification required',45);
+            if(_unknownFaceStreak>=3&&!st.idVerified&&!st.manualNoId&&!_idScanActive&&!document.getElementById('validIdOverlay').classList.contains('open')){
+                setVisitorFlowStatus('Visitor not recognized. Choose <b>PRESENT VALID ID</b> or <b>NO VALID ID AVAILABLE</b>.','warn');
                 openIdentityVerificationScreen(st.qr);
             }
         }
     }
-
-    // Auto-log as soon as every condition is satisfied (waits automatically otherwise).
     _tryAutoLogVisitor();
 }
 
@@ -2805,7 +2925,7 @@ function stopVisitorCamera(){
     var hud  = document.getElementById('faceHud'); if (hud) hud.style.display='none';
     if(faceRecogInterval){ clearInterval(faceRecogInterval); faceRecogInterval = null; }
     _stableMatchCounter = 0; _lastFaceMatchName = null;
-    try { visitorRegistrationState.faceDetected = false; visitorRegistrationState.faceDescriptor = null; } catch(e){}
+    try { visitorRegistrationState.faceDetected=false; visitorRegistrationState.faceDescriptor=null; visitorRegistrationState.faceQualityOk=false; visitorRegistrationState.faceQualityStableFrames=0; visitorRegistrationState.faceQualifiedAfterReason=false; } catch(e){}
 }
 
 
@@ -2974,42 +3094,104 @@ function delClient(id) {
     saveAll(); renderPeople();
 }
 
-/* Downloads a ready-to-fill Client Inventory workbook whose columns match
-   EXACTLY what importExcel() reads back: ID, Name, Grade, Section, Category. */
-function downloadClientInventoryTemplate(){
+/* Downloads a ready-to-fill Client Inventory workbook. Category cells use
+   a strict Excel dropdown that mirrors the exact categories accepted by QLog. */
+async function downloadClientInventoryTemplate(){
     if(typeof XLSX === 'undefined'){ alert('Local Excel library not loaded.'); return; }
-    var rows = [
-        { ID: '2024-0001', Name: 'Juan Pedro Dela Cruz', Grade: '7', Section: 'Rizal', Category: 'STUDENT' }
-    ];
-    var ws = XLSX.utils.json_to_sheet(rows, { header: ['ID','Name','Grade','Section','Category'] });
-    ws['!cols'] = [{wch:16},{wch:34},{wch:10},{wch:18},{wch:16}];
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Client Inventory');
-    XLSX.writeFile(wb, 'QLOG_Client_Inventory_Template.xlsx');
-    try { if (typeof logAudit === 'function') logAudit('TEMPLATE_DOWNLOAD', 'Client Inventory import template downloaded'); } catch(e){}
-    if(typeof toast === 'function') toast('⬇ Client Inventory template downloaded (sample row included).','green');
+    try{
+        var ws = XLSX.utils.aoa_to_sheet([
+            ['ID','Name','Grade','Section','Category'],
+            ['','','','','']
+        ]);
+        ws['!cols'] = [{wch:18},{wch:34},{wch:12},{wch:20},{wch:22}];
+        var guide = XLSX.utils.aoa_to_sheet([
+            ['QLog Client Inventory Template'],
+            ['Required columns','ID, Name, Grade, Section, Category'],
+            ['Valid Category values', CLIENT_CATEGORIES.join(', ')],
+            ['Note','For non-students, Grade and Section may be left blank. Do not rename the Client Inventory sheet.']
+        ]);
+        guide['!cols'] = [{wch:24},{wch:95}];
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Client Inventory');
+        XLSX.utils.book_append_sheet(wb, guide, 'Instructions');
+        await downloadWorkbookWithValidations(wb, 'Client Inventory', [{
+            sqref:'E2:E2001', values:CLIENT_CATEGORIES, allowBlank:false,
+            promptTitle:'QLog Category', prompt:'Choose the exact QLog client category.',
+            errorTitle:'Invalid QLog Category', error:'Select a Category from the dropdown list. Free-text values are not accepted.'
+        }], 'QLOG_Client_Inventory_Template.xlsx');
+        try { if (typeof logAudit === 'function') logAudit('TEMPLATE_DOWNLOAD', 'Client Inventory validated import template downloaded'); } catch(e){}
+        if(typeof toast === 'function') toast('⬇ Client template downloaded with a validated Category dropdown.','green');
+    }catch(err){
+        console.error('[client-template]', err);
+        toast('❌ Could not generate the Client Inventory template: ' + (err.message || err), 'red');
+    }
 }
+
+function _clientPick(row, keys){
+    for(var k in row){
+        if(!Object.prototype.hasOwnProperty.call(row,k)) continue;
+        var norm = String(k).replace(/[^a-z0-9]/gi,'').toLowerCase();
+        if(keys.indexOf(norm) !== -1){
+            var v = row[k]; return v === undefined || v === null ? '' : String(v).trim();
+        }
+    }
+    return '';
+}
+
 function importExcel(){
     var fileInput = document.getElementById('excelFile');
-    if(!fileInput || !fileInput.files || fileInput.files.length === 0) return;
+    var resultEl = document.getElementById('importResult');
+    if(!fileInput || !fileInput.files || fileInput.files.length === 0){
+        if(resultEl){ resultEl.style.color='#dc2626'; resultEl.textContent='Choose an Excel file first.'; }
+        return;
+    }
     var f = fileInput.files[0]; var r = new FileReader();
     r.onload = function(e) {
         if(typeof XLSX === 'undefined') return;
-        var wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-        var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        var added = 0, updated = 0;
-        
-        rows.forEach(function(x) {
-            if(!x.ID) return;
-            var rec = { id: String(x.ID), name: x.Name || '', grade: x.Grade || '', section: x.Section || '', category: (x.Category || 'STUDENT').toUpperCase() };
-            var exArray = people.filter(function(p) { return p.id === rec.id; });
-            if(exArray.length > 0){
-                var ex = exArray[0];
-                ex.name = rec.name; ex.grade = rec.grade; ex.section = rec.section; ex.category = rec.category; updated++;
-            } else { people.push(rec); added++; }
-        });
-        saveAll(); renderPeople();
-        document.getElementById('importResult').innerHTML = "Added: " + added + " Updated: " + updated + " Total: " + people.length;
+        var added = 0, updated = 0, invalid = 0, problems = [];
+        try{
+            var wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+            var sheetName = wb.SheetNames.indexOf('Client Inventory') !== -1 ? 'Client Inventory' : wb.SheetNames[0];
+            if(!sheetName) throw new Error('Workbook has no worksheet.');
+            var rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:'', raw:false});
+            rows.forEach(function(x, idx) {
+                var id = _clientPick(x,['id','clientid','lrn','employeeno','employeenumber']);
+                var name = _clientPick(x,['name','fullname','clientname']).replace(/\s+/g,' ').trim();
+                var grade = _clientPick(x,['grade','gradelevel']);
+                var section = _clientPick(x,['section']);
+                var rawCategory = _clientPick(x,['category','clientcategory','type']);
+                if(!id && !name && !rawCategory) return; // truly blank template row
+                if(!id || !name){ invalid++; problems.push('Row ' + (idx+2) + ': ID and Name are required.'); return; }
+                var category = normalizeClientCategory(rawCategory);
+                if(!category){
+                    invalid++;
+                    problems.push('Row ' + (idx+2) + ' (' + id + '): invalid Category "' + (rawCategory || '(blank)') + '". Use the template dropdown.');
+                    return;
+                }
+                var rec = {id:String(id).trim(), name:name, grade:grade, section:section, category:category};
+                var ex = null;
+                for(var i=0;i<people.length;i++){
+                    if(String(people[i].id).trim().toLowerCase() === rec.id.toLowerCase()){ ex=people[i]; break; }
+                }
+                if(ex){ ex.name=rec.name; ex.grade=rec.grade; ex.section=rec.section; ex.category=rec.category; updated++; }
+                else { people.push(rec); added++; }
+            });
+            saveAll(); renderPeople();
+            dynamicFilterData['Category'] = CLIENT_CATEGORIES.slice();
+            localStorage.setItem('dynamicFilterData', JSON.stringify(dynamicFilterData));
+            if(resultEl){
+                resultEl.style.color = invalid ? '#b45309' : '#16a34a';
+                resultEl.innerHTML = '✅ Added: <b>' + added + '</b> &nbsp; ♻ Updated: <b>' + updated + '</b> &nbsp; ⚠ Invalid: <b>' + invalid + '</b> &nbsp; Total: <b>' + people.length + '</b>' +
+                    (problems.length ? '<div style="margin-top:6px;font-weight:400;color:#64748b;font-size:12px;">' + problems.slice(0,12).map(function(v){return _xmlEsc(v);}).join('<br>') + (problems.length>12?'<br>… and '+(problems.length-12)+' more':'') + '</div>' : '');
+            }
+            try { logAudit('CLIENT_BULK_IMPORT','Added: '+added+', Updated: '+updated+', Invalid: '+invalid+' (file: '+f.name+')'); } catch(_e){}
+            toast('📥 Client import complete — ' + added + ' added, ' + updated + ' updated' + (invalid ? ', ' + invalid + ' invalid.' : '.'), invalid ? 'yellow' : 'green');
+            fileInput.value='';
+        }catch(err){
+            console.error('[client-import]',err);
+            if(resultEl){ resultEl.style.color='#dc2626'; resultEl.textContent='Could not read/import the workbook: ' + (err.message || err); }
+            toast('❌ Client import failed.', 'red');
+        }
     };
     r.readAsArrayBuffer(f);
 }
@@ -3114,6 +3296,10 @@ var visitorRegistrationState = {
     faceRecognized: false,
     faceDescriptor: null,
     faceImage: '',
+    faceQualityOk: false,
+    faceQualityStableFrames: 0,
+    faceQualifiedAfterReason: false,
+    reasonSelectedAt: 0,
     reason: '',
     /* 'ID_OCR' | 'MANUAL' - how the visitor's NAME was originally established */
     nameSource: null,
@@ -3134,7 +3320,8 @@ function resetVisitorRegistrationState(){
         idVerified: false, idVerificationEvidence: null, ocrConfidence: 0, confirmedFrames: 0,
         idSource: '', idNumber: '',
         idType: '', dob: '', faceDetected: false, faceRegistered: false, faceRecognized: false,
-        faceDescriptor: null, faceImage: '', reason: '', nameSource: null, requiresIdRecheck: false,
+        faceDescriptor: null, faceImage: '', faceQualityOk: false, faceQualityStableFrames: 0,
+        faceQualifiedAfterReason: false, reasonSelectedAt: 0, reason: '', nameSource: null, requiresIdRecheck: false,
         autoLogInProgress: false, logged: false
     };
     _resetIdVerificationRuntime();
@@ -3201,34 +3388,58 @@ function setVisitorName(name, source, trust){
     _syncVisitorNameEditability();
 }
 
-/* Name field is editable ONLY in MANUAL_NO_ID mode. */
+/* Keep the visible visitor name editable after an ID scan or manual entry so
+   the guard can correct OCR/typing mistakes before the face-qualified save. */
 function _syncVisitorNameEditability(){
     var f = document.getElementById('visitorName');
     if(!f) return;
-    var manual = visitorRegistrationState.identityVerificationMethod === 'MANUAL_NO_ID';
-    if(manual){
+    var st = visitorRegistrationState;
+    var editable = (st.identityVerificationMethod === 'MANUAL_NO_ID') ||
+                   (st.identityVerificationMethod === 'ID_OCR' && st.idVerified === true);
+    if(editable){
         f.removeAttribute('readonly');
-        f.placeholder = 'Full Name (manual entry \u2014 no valid ID presented)';
+        f.placeholder = st.identityVerificationMethod === 'ID_OCR'
+            ? 'Full Name (ID scanned — correct OCR text here if needed)'
+            : 'Full Name (manual entry — editable until saved)';
+        f.title = 'You may correct the visitor name before the log is saved.';
     } else {
-        f.setAttribute('readonly', 'readonly');
-        f.placeholder = 'Full Name (captured automatically from Valid ID / face recognition)';
+        f.setAttribute('readonly','readonly');
+        f.placeholder = 'Full Name (identity must be established first)';
+        f.title = 'Complete identity verification first.';
     }
 }
 
-/* Keeps state in sync with the guard's manual typing, and hard-blocks typing
-   in every other mode (defence in depth: not only the readonly attribute). */
 function onVisitorNameInput(){
     var f = document.getElementById('visitorName');
     if(!f) return;
     var st = visitorRegistrationState;
+    var corrected = f.value.replace(/\s+/g,' ').trim();
     if(st.identityVerificationMethod === 'MANUAL_NO_ID'){
-        st.name = f.value.trim();
+        st.name = corrected;
         st.manualNoId = true;
         st.idVerified = false;
         st.idVerificationEvidence = null;
+        st.nameSource = 'MANUAL';
         return;
     }
-    // Not in manual mode: revert any attempted edit to the trusted value.
+    if(st.identityVerificationMethod === 'ID_OCR' && st.idVerified === true){
+        var original = st.name || (st.idVerificationEvidence && st.idVerificationEvidence.name) || '';
+        st.name = corrected;
+        st.nameSource = 'ID_OCR';
+        st.nameEditedAfterVerification = _normalizeNameKey(corrected) !== _normalizeNameKey(original);
+        if(st.idVerificationEvidence && st.idVerificationEvidence.verified === true){
+            if(!st.idVerificationEvidence.ocrNameOriginal) st.idVerificationEvidence.ocrNameOriginal = st.idVerificationEvidence.name || original;
+            st.idVerificationEvidence.name = corrected;
+            st.idVerificationEvidence.operatorCorrectedName = st.nameEditedAfterVerification === true;
+        }
+        var note = document.getElementById('visitorNameSource');
+        if(note && corrected){
+            note.style.display='block';
+            note.textContent = st.nameEditedAfterVerification ? '✎ ID name verified • corrected before save' : '✓ Name verified from Valid ID • editable before save';
+        }
+        return;
+    }
+    // Other modes (e.g. a pure face match) stay protected from arbitrary edits.
     if(f.value !== (st.name || '')) f.value = st.name || '';
 }
 
@@ -4727,20 +4938,21 @@ function _markIdVerified(result){
 
 /* ===================== AUTOMATIC VISITOR LOGGING ===================== */
 function onVisitorReasonChanged(){
-    var sel = document.getElementById('visitorReason');
-    var other = document.getElementById('visitorReasonOther');
+    var sel=document.getElementById('visitorReason'), other=document.getElementById('visitorReasonOther');
     if(!sel) return;
-    if(sel.value === 'Others'){
-        if(other) other.style.display = 'block';
-    } else if(other){
-        other.style.display = 'none';
+    if(sel.value==='Others'){ if(other) other.style.display='block'; } else if(other){ other.style.display='none'; }
+    var reason=sel.value.trim(); if(reason==='Others') reason=other?other.value.trim():'';
+    var st=visitorRegistrationState;
+    var changed=reason!==st.reason;
+    st.reason=reason;
+    if(!reason){ st.reasonSelectedAt=0; st.faceQualifiedAfterReason=false; return; }
+    if(changed){
+        // IMPORTANT: selecting a reason arms logging but can never reuse a stale face.
+        st.reasonSelectedAt=Date.now(); st.faceQualifiedAfterReason=false; st.faceDetected=false; st.faceDescriptor=null; st.faceImage=''; st.faceQualityOk=false; st.faceQualityStableFrames=0;
     }
-    var reason = sel.value.trim();
-    if(reason === 'Others') reason = other ? other.value.trim() : '';
-    visitorRegistrationState.reason = reason;
-    if(reason) _tryAutoLogVisitor();
+    setVisitorFlowStatus('📷 Reason selected: <b>'+reason+'</b><br>Please position your entire face clearly inside the Camera Box. The log will save only after a fresh full-face verification.','');
+    // Do NOT call _tryAutoLogVisitor() here. A fresh camera tick must qualify the face first.
 }
-
 /* ================= FINAL IDENTITY VALIDATION BEFORE LOGGING =================
    Enforced in application logic (not only through the UI) so that a NEW
    visitor can never be logged by tampering with HTML fields. */
@@ -4783,8 +4995,8 @@ function _tryAutoLogVisitor(){
         setVisitorFlowStatus('\u26a0 Visitor identity not established yet.', 'warn');
         return;
     }
-    if(!st.faceDetected || !st.faceDescriptor){
-        setVisitorFlowStatus('\u26a0 <b>FACE REQUIRED</b><br>Please look at the camera. The visitor will be logged automatically once the face is detected.', 'warn');
+    if(!st.faceDetected || !st.faceDescriptor || !st.faceQualityOk || !st.faceQualifiedAfterReason){
+        setVisitorFlowStatus('\u26a0 <b>FRESH FULL FACE REQUIRED</b><br>Please position your entire face clearly inside the Camera Box. The log will save after a fresh clear-face verification.', 'warn');
         return;
     }
     autoLogVisitorAfterReason();
@@ -4798,8 +5010,8 @@ async function autoLogVisitorAfterReason(){
     try {
         setVisitorFlowStatus('\u23f3 Verifying visitor\u2026', '');
         // Re-validate every condition at execution time.
-        if(!st.qr || !st.reason || !st.name || !st.faceDetected || !st.faceDescriptor){
-            setVisitorFlowStatus('\u26a0 Visitor could not be verified yet. Waiting\u2026', 'warn');
+        if(!st.qr || !st.reason || !st.name || !st.faceDetected || !st.faceDescriptor || !st.faceQualityOk || !st.faceQualifiedAfterReason){
+            setVisitorFlowStatus('\u26a0 Visitor could not be verified yet. A fresh clear full face is still required.', 'warn');
             return;
         }
         if(st.mode === 'NEW' || st.requiresIdRecheck){
@@ -5756,13 +5968,89 @@ function checkOverdueEquipment(){
     return changed;
 }
 
+/* ---------- COA / ICS alignment ---------- */
+var COA_PPE_CAPITALIZATION_THRESHOLD = 50000; // COA Circular No. 2022-004: PPE threshold is P50,000 and above.
+var ICS_SEMI_EXPENDABLE_CATEGORIES = [
+    'Office Equipment',
+    'Information and Communication Technology Equipment',
+    'Communication Equipment',
+    'Medical Equipment',
+    'Printing Equipment',
+    'Sports Equipment',
+    'Technical and Scientific Equipment',
+    'Other Machinery and Equipment',
+    'Furniture and Fixtures',
+    'Books',
+    'Other Semi-Expendable Property'
+];
+var ICS_MEASURE_UNITS = ['unit','piece','set','lot','box','pack','pair','roll','ream'];
+var EQ_CONDITIONS = ['Good','Fair','With Minor Defect','For Maintenance','Damaged'];
+var EQ_IMPORT_STATUSES = ['AVAILABLE','MAINTENANCE','DAMAGED'];
+
+function _eqMoney(v){
+    var n = Number(v || 0);
+    return isFinite(n) ? n : 0;
+}
+function _eqPositiveInt(v, fallback){
+    var n = parseInt(v,10);
+    return isFinite(n) && n > 0 ? n : (fallback || 0);
+}
+function _eqNormalizeCategory(v){
+    var raw = String(v || '').trim();
+    if(!raw) return '';
+    for(var i=0;i<ICS_SEMI_EXPENDABLE_CATEGORIES.length;i++){
+        if(ICS_SEMI_EXPENDABLE_CATEGORIES[i].toLowerCase() === raw.toLowerCase()) return ICS_SEMI_EXPENDABLE_CATEGORIES[i];
+    }
+    var aliases = {
+        'ict':'Information and Communication Technology Equipment',
+        'ict equipment':'Information and Communication Technology Equipment',
+        'computer equipment':'Information and Communication Technology Equipment',
+        'laboratory apparatus':'Technical and Scientific Equipment',
+        'laboratory equipment':'Technical and Scientific Equipment',
+        'science equipment':'Technical and Scientific Equipment',
+        'technical equipment':'Technical and Scientific Equipment',
+        'furniture':'Furniture and Fixtures',
+        'book':'Books'
+    };
+    return aliases[raw.toLowerCase()] || '';
+}
+function _eqTotalCost(e){
+    var q = _eqPositiveInt(e.quantity,1);
+    var uc = _eqMoney(e.unitCost);
+    return Math.round(q * uc * 100) / 100;
+}
+function _eqDateOnly(v){
+    if(!v) return '';
+    if(v instanceof Date && !isNaN(v.getTime())) return v.toISOString().slice(0,10);
+    var str = String(v).trim();
+    var d = new Date(str);
+    if(!isNaN(d.getTime())) return d.toISOString().slice(0,10);
+    return str;
+}
+function _eqResetRegistryForm(){
+    var defaults = {eqNewId:'',eqNewName:'',eqNewCategory:'',eqNewSerialNo:'',eqNewQuantity:'1',eqNewMeasureUnit:'unit',eqNewUnitCost:'',eqNewUsefulLife:'',eqNewIcsNo:'',eqNewFundCluster:'',eqNewDateAcquired:''};
+    Object.keys(defaults).forEach(function(id){ var el=document.getElementById(id); if(el) el.value=defaults[id]; });
+    var unit=document.getElementById('eqNewUnit'); if(unit) unit.value=currentSession.facility || '';
+    var cond=document.getElementById('eqNewCondition'); if(cond) cond.value='Good';
+}
+function _eqValidateIcsCore(rec){
+    if(!rec.id || !rec.name) return 'Inventory Item No. and Description are required.';
+    if(!rec.category) return 'Choose a COA semi-expendable Category from the list.';
+    if(!rec.measureUnit) return 'Unit of measure is required.';
+    if(!rec.quantity || rec.quantity < 1) return 'Quantity must be at least 1.';
+    if(!(rec.unitCost > 0)) return 'Unit Cost must be greater than zero.';
+    if(rec.unitCost >= COA_PPE_CAPITALIZATION_THRESHOLD) return 'Unit Cost is ₱50,000 or above. Under the current COA capitalization threshold, classify this as PPE/PAR instead of an ICS semi-expendable item.';
+    if(!rec.estimatedUsefulLife || rec.estimatedUsefulLife < 2) return 'Estimated Useful Life must be more than one year for an ICS semi-expendable item.';
+    if(!rec.assignedUnit) return 'Assigned Unit is required.';
+    return '';
+}
+
 /* ---------- Registry ---------- */
 function openEquipRegistryModal(){
     if(!canAccessEquipmentModule()) return;
     populateDatalist('eqUnitList', configData.facilities);
-    var cats = [];
-    equipment.forEach(function(e){ if(e.category && cats.indexOf(e.category) === -1) cats.push(e.category); });
-    populateDatalist('eqCategoryList', cats);
+    populateDatalist('eqCategoryList', ICS_SEMI_EXPENDABLE_CATEGORIES);
+    populateDatalist('eqMeasureUnitList', ICS_MEASURE_UNITS);
     var unitField = document.getElementById('eqNewUnit');
     if(unitField && !unitField.value) unitField.value = currentSession.facility || '';
     renderEquipRegistry();
@@ -5771,45 +6059,63 @@ function openEquipRegistryModal(){
 function closeEquipRegistryModal(){ document.getElementById('equipRegistryModal').style.display = 'none'; }
 
 function saveEquipmentItem(){
-    var id   = document.getElementById('eqNewId').value.trim();
-    var name = document.getElementById('eqNewName').value.trim();
-    var cat  = document.getElementById('eqNewCategory').value.trim();
-    var unit = document.getElementById('eqNewUnit').value.trim() || (currentSession.facility || '');
-    var cond = document.getElementById('eqNewCondition').value;
-    if(!id || !name){ toast('⚠️ Equipment ID and Name are required.','red'); return; }
-    if(!unit){ toast('⚠️ Assigned unit is required.','red'); return; }
-    var ex = findEquipment(id);
+    var rec = {
+        id: document.getElementById('eqNewId').value.trim(),
+        name: document.getElementById('eqNewName').value.replace(/\s+/g,' ').trim(),
+        category: _eqNormalizeCategory(document.getElementById('eqNewCategory').value),
+        serialNo: document.getElementById('eqNewSerialNo').value.trim(),
+        quantity: _eqPositiveInt(document.getElementById('eqNewQuantity').value,0),
+        measureUnit: document.getElementById('eqNewMeasureUnit').value.trim(),
+        unitCost: _eqMoney(document.getElementById('eqNewUnitCost').value),
+        estimatedUsefulLife: _eqPositiveInt(document.getElementById('eqNewUsefulLife').value,0),
+        icsNo: document.getElementById('eqNewIcsNo').value.trim(),
+        fundCluster: document.getElementById('eqNewFundCluster').value.trim(),
+        dateAcquired: document.getElementById('eqNewDateAcquired').value,
+        assignedUnit: document.getElementById('eqNewUnit').value.trim() || (currentSession.facility || ''),
+        condition: document.getElementById('eqNewCondition').value
+    };
+    var err = _eqValidateIcsCore(rec);
+    if(err){ toast('⚠️ ' + err,'red'); return; }
+    if(!sameUnit(rec.assignedUnit,currentSession.facility)){
+        toast('⛔ Registry changes are limited to your assigned unit: ' + currentSession.facility + '.','red'); return;
+    }
+    var ex = findEquipment(rec.id);
     if(ex){
-        if(!sameUnit(ex.unit, currentSession.facility)){
+        if(!sameUnit(ex.unit,currentSession.facility)){
             toast('⛔ ' + ex.id + ' is assigned to ' + ex.unit + '. Only that unit can update it.','red'); return;
         }
-        ex.name = name; ex.category = cat || ex.category; ex.unit = unit; ex.condition = cond;
-        toast('✅ Equipment updated: ' + ex.id, 'green');
-        eqAudit('EQUIPMENT_UPDATE', ex.id + ' - ' + name);
-    } else {
+        ex.name=rec.name; ex.category=rec.category; ex.serialNo=rec.serialNo; ex.quantity=rec.quantity;
+        ex.measureUnit=rec.measureUnit; ex.unitCost=rec.unitCost; ex.totalCost=_eqTotalCost(rec);
+        ex.estimatedUsefulLife=rec.estimatedUsefulLife; ex.icsNo=rec.icsNo; ex.fundCluster=rec.fundCluster;
+        ex.dateAcquired=rec.dateAcquired; ex.unit=rec.assignedUnit; ex.condition=rec.condition;
+        ex.icsAligned=true; ex.updatedAt=Date.now(); ex.updatedBy=currentSession.inCharge || '';
+        toast('✅ ICS item updated: ' + ex.id,'green');
+        eqAudit('EQUIPMENT_ICS_UPDATE', ex.id + ' - ' + rec.name);
+    }else{
         equipment.push({
-            id: id, name: name, category: cat || 'General', unit: unit, condition: cond,
-            status: 'AVAILABLE', addedAt: Date.now(), addedBy: currentSession.inCharge || '', remarks: ''
+            id:rec.id, name:rec.name, category:rec.category, serialNo:rec.serialNo,
+            quantity:rec.quantity, measureUnit:rec.measureUnit, unitCost:rec.unitCost, totalCost:_eqTotalCost(rec),
+            estimatedUsefulLife:rec.estimatedUsefulLife, icsNo:rec.icsNo, fundCluster:rec.fundCluster,
+            dateAcquired:rec.dateAcquired, unit:rec.assignedUnit, condition:rec.condition,
+            status:'AVAILABLE', addedAt:Date.now(), addedBy:currentSession.inCharge || '', remarks:'', icsAligned:true
         });
-        toast('✅ Equipment registered: ' + id, 'green');
-        eqAudit('EQUIPMENT_ADD', id + ' - ' + name + ' @ ' + unit);
+        toast('✅ ICS item registered: ' + rec.id,'green');
+        eqAudit('EQUIPMENT_ICS_ADD', rec.id + ' - ' + rec.name + ' @ ' + rec.assignedUnit);
     }
-    saveEquipData();
-    document.getElementById('eqNewId').value = '';
-    document.getElementById('eqNewName').value = '';
-    document.getElementById('eqNewCategory').value = '';
-    refreshEquipmentUI();
+    saveEquipData(); _eqResetRegistryForm(); refreshEquipmentUI();
 }
 
 function editEquipmentItem(id){
-    var it = findEquipment(id); if(!it) return;
-    document.getElementById('eqNewId').value = it.id;
-    document.getElementById('eqNewName').value = it.name;
-    document.getElementById('eqNewCategory').value = it.category || '';
-    document.getElementById('eqNewUnit').value = it.unit || '';
-    document.getElementById('eqNewCondition').value = it.condition || 'Good';
-    toast('✏️ Loaded ' + it.id + ' for editing.','yellow');
+    var it=findEquipment(id); if(!it) return;
+    var set=function(fid,v){ var el=document.getElementById(fid); if(el) el.value=(v===undefined||v===null?'':v); };
+    set('eqNewId',it.id); set('eqNewName',it.name); set('eqNewCategory',_eqNormalizeCategory(it.category) || it.category || '');
+    set('eqNewSerialNo',it.serialNo || ''); set('eqNewQuantity',it.quantity || 1); set('eqNewMeasureUnit',it.measureUnit || 'unit');
+    set('eqNewUnitCost',it.unitCost || ''); set('eqNewUsefulLife',it.estimatedUsefulLife || ''); set('eqNewIcsNo',it.icsNo || '');
+    set('eqNewFundCluster',it.fundCluster || ''); set('eqNewDateAcquired',it.dateAcquired || ''); set('eqNewUnit',it.unit || '');
+    set('eqNewCondition',it.condition || 'Good');
+    toast('✏️ Loaded ' + it.id + ' for ICS registry editing.','yellow');
 }
+
 function deleteEquipmentItem(id){
     var it = findEquipment(id); if(!it) return;
     if(!sameUnit(it.unit, currentSession.facility)){ toast('⛔ Only ' + it.unit + ' can delete this item.','red'); return; }
@@ -5840,182 +6146,194 @@ function eqStatusBadge(status){
 }
 
 function renderEquipRegistry(){
-    var q = (document.getElementById('eqRegistrySearch') || {}).value || '';
-    var st = (document.getElementById('eqRegistryStatus') || {}).value || 'ALL';
-    var onlyMine = document.getElementById('eqRegistryOnlyMine') ? document.getElementById('eqRegistryOnlyMine').checked : true;
-    q = q.trim().toLowerCase();
-    var list = equipment.slice().filter(function(e){
-        if(onlyMine && !sameUnit(e.unit, currentSession.facility)) return false;
-        if(st !== 'ALL' && e.status !== st) return false;
+    var q=((document.getElementById('eqRegistrySearch')||{}).value||'').trim().toLowerCase();
+    var st=(document.getElementById('eqRegistryStatus')||{}).value||'ALL';
+    var onlyMine=document.getElementById('eqRegistryOnlyMine') ? document.getElementById('eqRegistryOnlyMine').checked : true;
+    var list=equipment.slice().filter(function(e){
+        if(onlyMine && !sameUnit(e.unit,currentSession.facility)) return false;
+        if(st!=='ALL' && e.status!==st) return false;
         if(q){
-            var hay = [e.id, e.name, e.category, e.unit, e.condition].join(' ').toLowerCase();
-            if(hay.indexOf(q) === -1) return false;
+            var hay=[e.id,e.name,e.category,e.serialNo,e.icsNo,e.fundCluster,e.unit,e.condition].join(' ').toLowerCase();
+            if(hay.indexOf(q)===-1) return false;
         }
         return true;
     });
     list.sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
-    var html = '';
+    var html='';
     list.forEach(function(e){
-        var act = eqActiveLogFor(e.id);
-        var mine = sameUnit(e.unit, currentSession.facility);
-        var actions = '';
+        var act=eqActiveLogFor(e.id), mine=sameUnit(e.unit,currentSession.facility), actions='';
         if(mine){
-            actions += '<button style="background:#3b82f6;padding:4px 8px;font-size:12px;" onclick="editEquipmentItem(\'' + eqEsc(e.id) + '\')">Edit</button> ';
+            actions+='<button style="background:#3b82f6;padding:4px 8px;font-size:12px;" onclick="editEquipmentItem(\''+eqEsc(e.id)+'\')">Edit</button> ';
             if(!act){
-                if(e.status !== 'AVAILABLE') actions += '<button style="background:#16a34a;padding:4px 8px;font-size:12px;" onclick="setEquipmentStatus(\'' + eqEsc(e.id) + '\',\'AVAILABLE\')">Available</button> ';
-                if(e.status !== 'MAINTENANCE') actions += '<button style="background:#475569;padding:4px 8px;font-size:12px;" onclick="setEquipmentStatus(\'' + eqEsc(e.id) + '\',\'MAINTENANCE\')">Maintenance</button> ';
-                if(e.status !== 'DAMAGED') actions += '<button style="background:#b91c1c;padding:4px 8px;font-size:12px;" onclick="setEquipmentStatus(\'' + eqEsc(e.id) + '\',\'DAMAGED\')">Damaged</button> ';
-                actions += '<button style="background:#dc2626;padding:4px 8px;font-size:12px;" onclick="deleteEquipmentItem(\'' + eqEsc(e.id) + '\')">Delete</button>';
+                if(e.status!=='AVAILABLE') actions+='<button style="background:#16a34a;padding:4px 8px;font-size:12px;" onclick="setEquipmentStatus(\''+eqEsc(e.id)+'\',\'AVAILABLE\')">Available</button> ';
+                if(e.status!=='MAINTENANCE') actions+='<button style="background:#475569;padding:4px 8px;font-size:12px;" onclick="setEquipmentStatus(\''+eqEsc(e.id)+'\',\'MAINTENANCE\')">Maintenance</button> ';
+                if(e.status!=='DAMAGED') actions+='<button style="background:#b91c1c;padding:4px 8px;font-size:12px;" onclick="setEquipmentStatus(\''+eqEsc(e.id)+'\',\'DAMAGED\')">Damaged</button> ';
+                actions+='<button style="background:#dc2626;padding:4px 8px;font-size:12px;" onclick="deleteEquipmentItem(\''+eqEsc(e.id)+'\')">Delete</button>';
             }
-        } else { actions = '<span style="font-size:12px;color:#94a3b8;">Other unit</span>'; }
-        html += '<tr><td>' + eqEsc(e.id) + '</td><td>' + eqEsc(e.name) + '</td><td>' + eqEsc(e.category||'') + '</td><td>' + eqEsc(e.unit) + '</td><td>' + eqEsc(e.condition||'') + '</td><td>' + eqStatusBadge(e.status) + '</td><td>' + (act ? eqEsc(act.borrowerName) + '<br><span style="font-size:11px;color:#64748b;">' + eqEsc(act.borrowerId) + '</span>' : '--') + '</td>' +
-            '<td><button style="background:#0f172a;padding:4px 8px;font-size:12px;" onclick="showEquipmentQr(\'' + eqEsc(e.id) + '\')">QR</button> ' +
-            '<button style="background:#7c3aed;padding:4px 8px;font-size:12px;" onclick="openEquipmentHistory(\'' + eqEsc(e.id) + '\')">History</button></td>' +
-            '<td>' + actions + '</td></tr>';
+        }else actions='<span style="font-size:12px;color:#94a3b8;">Other unit</span>';
+        var qty=e.quantity||1, mu=e.measureUnit||'unit', uc=_eqMoney(e.unitCost), total=e.totalCost!==undefined?_eqMoney(e.totalCost):_eqTotalCost(e);
+        html+='<tr><td>'+eqEsc(e.id)+'</td><td>'+eqEsc(e.name)+(e.serialNo?'<br><span style="font-size:11px;color:#64748b;">SN: '+eqEsc(e.serialNo)+'</span>':'')+'</td>'+
+            '<td>'+eqEsc(e.category||'Legacy / unclassified')+(e.icsAligned===false?'<br><span style="font-size:11px;color:#b45309;font-weight:700;">⚠ Complete ICS fields</span>':'')+'</td><td>'+eqEsc(qty)+'</td><td>'+eqEsc(mu)+'</td><td>₱'+uc.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'+
+            '<td>₱'+total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td>'+eqEsc(e.estimatedUsefulLife?e.estimatedUsefulLife+' yr(s)':'--')+'</td><td>'+eqEsc(e.icsNo||'--')+'</td>'+
+            '<td>'+eqEsc(e.unit)+'</td><td>'+eqEsc(e.condition||'')+'</td><td>'+eqStatusBadge(e.status)+'</td><td>'+(act?eqEsc(act.borrowerName)+'<br><span style="font-size:11px;color:#64748b;">'+eqEsc(act.borrowerId)+'</span>':'--')+'</td>'+
+            '<td><button style="background:#0f172a;padding:4px 8px;font-size:12px;" onclick="showEquipmentQr(\''+eqEsc(e.id)+'\')">QR</button> <button style="background:#7c3aed;padding:4px 8px;font-size:12px;" onclick="openEquipmentHistory(\''+eqEsc(e.id)+'\')">History</button></td><td>'+actions+'</td></tr>';
     });
-    document.getElementById('eqRegistryTbl').innerHTML = html || '<tr><td colspan="9">No equipment registered yet. Add items using the form above.</td></tr>';
+    document.getElementById('eqRegistryTbl').innerHTML=html||'<tr><td colspan="15">No equipment registered yet. Add an ICS-aligned semi-expendable item above.</td></tr>';
 }
 
 function exportEquipRegistry(){
-    if(equipment.length === 0){ alert('No equipment registered yet.'); return; }
-    if(typeof XLSX === 'undefined') return;
-    var rows = equipment.map(function(e){
-        return { ID:e.id, Name:e.name, Category:e.category||'', AssignedUnit:e.unit, Condition:e.condition||'', Status:e.status, RegisteredBy:e.addedBy||'', RegisteredOn:eqFmt(e.addedAt) };
+    if(equipment.length===0){ alert('No equipment registered yet.'); return; }
+    if(typeof XLSX==='undefined') return;
+    var rows=equipment.map(function(e){
+        return {
+            InventoryItemNo:e.id, Description:e.name, Quantity:e.quantity||1, Unit:e.measureUnit||'unit',
+            UnitCost:_eqMoney(e.unitCost), TotalCost:e.totalCost!==undefined?_eqMoney(e.totalCost):_eqTotalCost(e),
+            EstimatedUsefulLife:e.estimatedUsefulLife||'', Category:e.category||'', SerialNo:e.serialNo||'',
+            ICSNo:e.icsNo||'', FundCluster:e.fundCluster||'', DateAcquired:e.dateAcquired||'', AssignedUnit:e.unit||'',
+            Condition:e.condition||'', Status:e.status||'', Remarks:e.remarks||'', RegisteredBy:e.addedBy||'', RegisteredOn:eqFmt(e.addedAt)
+        };
     });
-    var ws = XLSX.utils.json_to_sheet(rows);
-    if(typeof addSignatureToExcel === 'function') addSignatureToExcel(ws);
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Equipment Registry');
-    XLSX.writeFile(wb, 'Equipment_Registry.xlsx');
+    var ws=XLSX.utils.json_to_sheet(rows);
+    ws['!cols']=[{wch:20},{wch:36},{wch:10},{wch:10},{wch:14},{wch:14},{wch:18},{wch:38},{wch:20},{wch:18},{wch:14},{wch:14},{wch:26},{wch:18},{wch:14},{wch:36},{wch:24},{wch:20}];
+    if(typeof addSignatureToExcel==='function') addSignatureToExcel(ws);
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'ICS Equipment Registry');
+    XLSX.writeFile(wb,'ICS_Equipment_Registry.xlsx');
 }
 
-/* ---------- Registry template + bulk import ---------- */
-var EQ_IMPORT_STATUSES = ['AVAILABLE','MAINTENANCE','DAMAGED'];
-
-/* Template columns match the registry fields and the bulk importer below. */
-function downloadEquipmentTemplate(){
-    if(typeof XLSX === 'undefined'){ alert('Local Excel library not loaded.'); return; }
-    var rows = [
-        {
-            ID: 'SCI-MICRO-001',
-            Name: 'Compound Microscope',
-            Category: 'Laboratory Apparatus',
-            AssignedUnit: (currentSession && currentSession.facility) ? currentSession.facility : 'Science Laboratory',
-            Condition: 'Good',
-            Status: 'AVAILABLE',
-            Remarks: 'Sample row - replace with real equipment'
-        }
-    ];
-    var ws = XLSX.utils.json_to_sheet(rows, { header: ['ID','Name','Category','AssignedUnit','Condition','Status','Remarks'] });
-    ws['!cols'] = [{wch:18},{wch:32},{wch:24},{wch:26},{wch:18},{wch:14},{wch:40}];
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Equipment Registry');
-    XLSX.writeFile(wb, 'QLOG_Equipment_Registry_Template.xlsx');
-    eqAudit('TEMPLATE_DOWNLOAD', 'Equipment Registry import template downloaded');
-    toast('⬇ Equipment Registry template downloaded (sample row included).','green');
+/* ---------- ICS registry template + robust bulk import ---------- */
+async function downloadEquipmentTemplate(){
+    if(typeof XLSX==='undefined'){ alert('Local Excel library not loaded.'); return; }
+    try{
+        var headers=['InventoryItemNo','Description','Quantity','Unit','UnitCost','TotalCost','EstimatedUsefulLife','Category','SerialNo','ICSNo','FundCluster','DateAcquired','AssignedUnit','Condition','Status','Remarks'];
+        var ws=XLSX.utils.aoa_to_sheet([headers, new Array(headers.length).fill('')]);
+        ws['!cols']=[{wch:20},{wch:36},{wch:10},{wch:10},{wch:14},{wch:14},{wch:18},{wch:38},{wch:20},{wch:18},{wch:14},{wch:14},{wch:26},{wch:18},{wch:14},{wch:40}];
+        var guide=XLSX.utils.aoa_to_sheet([
+            ['QLog ICS-Aligned Equipment Registry Template'],
+            ['COA basis','GAM Appendix 59 (Inventory Custodian Slip) core item fields; intended for semi-expendable property.'],
+            ['Required','InventoryItemNo, Description, Quantity, Unit, UnitCost, EstimatedUsefulLife, Category, AssignedUnit'],
+            ['TotalCost','Optional on import. QLog recalculates Quantity × UnitCost.'],
+            ['UnitCost rule','ICS semi-expendable item must be below ₱50,000 per unit; ₱50,000 and above is treated as PPE under the current COA capitalization threshold.'],
+            ['EstimatedUsefulLife','Must be more than one year.'],
+            ['Category','Use one of the exact values below. The importer validates Category strictly.'],
+            ['Valid Category values',ICS_SEMI_EXPENDABLE_CATEGORIES.join(' | ')],
+            ['Current QLog unit',currentSession.facility||''],
+            ['Backward compatibility','The importer also accepts the old headers ID, Name, AssignedUnit, Condition.']
+        ]);
+        guide['!cols']=[{wch:26},{wch:100}];
+        var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Equipment Registry'); XLSX.utils.book_append_sheet(wb,guide,'Instructions');
+        await downloadWorkbookWithValidations(wb,'Equipment Registry',[
+            {sqref:'D2:D2001',values:ICS_MEASURE_UNITS,allowBlank:false,promptTitle:'Unit of Measure',prompt:'Choose a common unit or type an appropriate unit.',errorTitle:'Invalid Unit',error:'Choose a Unit from the dropdown list.'},
+            {sqref:'N2:N2001',values:EQ_CONDITIONS,allowBlank:true,promptTitle:'Condition',prompt:'Choose the condition.',errorTitle:'Invalid Condition',error:'Choose a Condition from the dropdown list.'},
+            {sqref:'O2:O2001',values:EQ_IMPORT_STATUSES,allowBlank:true,promptTitle:'Status',prompt:'New items normally use AVAILABLE.',errorTitle:'Invalid Status',error:'Choose a Status from the dropdown list.'}
+        ],'QLOG_ICS_Equipment_Registry_Template.xlsx');
+        eqAudit('TEMPLATE_DOWNLOAD','ICS-aligned Equipment Registry import template downloaded');
+        toast('⬇ ICS Equipment Registry template downloaded with validated dropdowns.','green');
+    }catch(err){
+        console.error('[equipment-template]',err);
+        toast('❌ Could not generate Equipment Registry template: '+(err.message||err),'red');
+    }
 }
 
-function _eqPick(row, keys){
+function _eqPick(row,keys){
     for(var k in row){
-        if(!Object.prototype.hasOwnProperty.call(row, k)) continue;
-        var norm = String(k).replace(/[^a-z]/gi,'').toLowerCase();
-        if(keys.indexOf(norm) !== -1){
-            var v = row[k];
-            if(v === undefined || v === null) return '';
-            return String(v).trim();
-        }
+        if(!Object.prototype.hasOwnProperty.call(row,k)) continue;
+        var norm=String(k).replace(/[^a-z0-9]/gi,'').toLowerCase();
+        if(keys.indexOf(norm)!==-1){ var v=row[k]; return v===undefined||v===null?'':String(v).trim(); }
     }
     return '';
 }
 
-/* Bulk import. Existing Equipment IDs are UPDATED in place (never duplicated)
-   and only when the current unit is authorized to touch them; active
-   borrowing status and history are always preserved. */
 function importEquipmentExcel(){
     if(!canAccessEquipmentModule()){ toast('⛔ Not authorized for the Equipment module.','red'); return; }
-    var fileInput = document.getElementById('eqImportFile');
-    var resEl = document.getElementById('eqImportResult');
-    if(!fileInput || !fileInput.files || !fileInput.files.length){
-        if(resEl){ resEl.style.color = '#dc2626'; resEl.textContent = 'Choose an .xlsx file first.'; }
-        return;
-    }
-    if(typeof XLSX === 'undefined'){ alert('Local Excel library not loaded.'); return; }
-    var f = fileInput.files[0];
-    var r = new FileReader();
-    r.onload = function(ev){
-        var added = 0, updated = 0, skipped = 0, invalid = 0;
-        var problems = [];
-        try {
-            var wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
-            var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-            rows.forEach(function(row, idx){
-                var id     = _eqPick(row, ['id','equipmentid','eqid','qrcode','code']);
-                var name   = _eqPick(row, ['name','equipmentname','itemname','description']);
-                var cat    = _eqPick(row, ['category','type']);
-                var unit   = _eqPick(row, ['assignedunit','unit','office','facility','department']);
-                var cond   = _eqPick(row, ['condition','itemcondition']);
-                var status = _eqPick(row, ['status','state']).toUpperCase();
-                var remarks= _eqPick(row, ['remarks','notes','note']);
+    var fileInput=document.getElementById('eqImportFile'), resEl=document.getElementById('eqImportResult');
+    if(!fileInput||!fileInput.files||!fileInput.files.length){ if(resEl){resEl.style.color='#dc2626';resEl.textContent='Choose an .xlsx file first.';} return; }
+    if(typeof XLSX==='undefined'){ alert('Local Excel library not loaded.'); return; }
+    var f=fileInput.files[0], r=new FileReader();
+    r.onload=function(ev){
+        var added=0,updated=0,skipped=0,invalid=0,legacy=0,problems=[];
+        try{
+            var wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+            var sheetName=wb.SheetNames.indexOf('Equipment Registry')!==-1?'Equipment Registry':wb.SheetNames[0];
+            if(!sheetName) throw new Error('Workbook has no worksheet.');
+            var ws=wb.Sheets[sheetName];
+            var matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+            var headers=(matrix[0]||[]).map(function(h){return String(h).replace(/[^a-z0-9]/gi,'').toLowerCase();});
+            var isIcsTemplate=headers.indexOf('inventoryitemno')!==-1 || headers.indexOf('unitcost')!==-1 || headers.indexOf('estimatedusefullife')!==-1;
+            var rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+            rows.forEach(function(row,idx){
+                var id=_eqPick(row,['inventoryitemno','inventoryitemnumber','id','equipmentid','eqid','qrcode','code']);
+                var name=_eqPick(row,['description','name','equipmentname','itemname']);
+                var rawCat=_eqPick(row,['category','type']);
+                var quantity=_eqPositiveInt(_eqPick(row,['quantity','qty']),1);
+                var measureUnit=_eqPick(row,['unit','measureunit','unitofmeasure'])||'unit';
+                var unitCost=_eqMoney(_eqPick(row,['unitcost','cost','amountunitcost']));
+                var useful=_eqPositiveInt(_eqPick(row,['estimatedusefullife','usefullife','estimatedlife']),0);
+                var serialNo=_eqPick(row,['serialno','serialnumber','serial']);
+                var icsNo=_eqPick(row,['icsno','icsnumber','inventorycustodianslipno']);
+                var fundCluster=_eqPick(row,['fundcluster','fund']);
+                var dateAcquired=_eqDateOnly(_eqPick(row,['dateacquired','acquisitiondate','datepurchased']));
+                var unit=_eqPick(row,['assignedunit','office','facility','department']) || (currentSession.facility||'');
+                var cond=_eqPick(row,['condition','itemcondition'])||'Good';
+                var status=_eqPick(row,['status','state']).toUpperCase()||'AVAILABLE';
+                var remarks=_eqPick(row,['remarks','notes','note']);
+                if(!id&&!name&&!rawCat&&!unitCost&&!useful) return;
+                if(!id||!name){ invalid++; problems.push('Row '+(idx+2)+': Inventory Item No./ID and Description/Name are required.'); return; }
+                if(EQ_CONDITIONS.indexOf(cond)===-1){ invalid++; problems.push('Row '+(idx+2)+' ('+id+'): invalid Condition "'+cond+'".'); return; }
+                if(EQ_IMPORT_STATUSES.indexOf(status)===-1){ invalid++; problems.push('Row '+(idx+2)+' ('+id+'): invalid Status "'+status+'".'); return; }
+                if(!sameUnit(unit,currentSession.facility)){ skipped++; problems.push('Row '+(idx+2)+' ('+id+'): AssignedUnit must match your current unit ('+currentSession.facility+').'); return; }
 
-                if(!id || !name){
-                    invalid++;
-                    problems.push('Row ' + (idx + 2) + ': Equipment ID and Equipment Name are both required.');
-                    return;
-                }
-                if(!unit) unit = currentSession.facility || '';
-                if(!unit){
-                    invalid++;
-                    problems.push('Row ' + (idx + 2) + ' (' + id + '): no assigned unit available.');
-                    return;
-                }
-                if(EQ_IMPORT_STATUSES.indexOf(status) === -1) status = '';
-
-                var ex = findEquipment(id);
-                if(ex){
-                    // Same unit/authorization rule as the manual registry form.
-                    if(!sameUnit(ex.unit, currentSession.facility)){
-                        skipped++;
-                        problems.push(id + ': assigned to ' + ex.unit + ' - only that unit may update it.');
-                        return;
+                var cat=_eqNormalizeCategory(rawCat);
+                var isLegacyRow=!isIcsTemplate;
+                if(isLegacyRow){
+                    // Compatibility path for the OLD QLog template that had no ICS cost/useful-life fields.
+                    // Import the real records without inventing accounting values, then flag them for completion.
+                    var legacyCategory=cat || rawCat || 'Legacy / Unclassified';
+                    var exLegacy=findEquipment(id), actLegacy=exLegacy?eqActiveLogFor(exLegacy.id):null;
+                    var legacyNote='Imported from legacy Equipment Registry template — complete Unit Cost, Estimated Useful Life and other ICS fields.';
+                    if(exLegacy){
+                        if(!sameUnit(exLegacy.unit,currentSession.facility)){ skipped++; problems.push(id+': existing item belongs to '+exLegacy.unit+'.'); return; }
+                        exLegacy.name=name; exLegacy.category=legacyCategory; exLegacy.unit=unit; exLegacy.condition=cond; exLegacy.remarks=remarks||exLegacy.remarks||'';
+                        exLegacy.quantity=exLegacy.quantity||1; exLegacy.measureUnit=exLegacy.measureUnit||'unit'; exLegacy.icsAligned=false; exLegacy.icsComplianceNote=legacyNote;
+                        if(!actLegacy) exLegacy.status=status;
+                        exLegacy.updatedAt=Date.now(); exLegacy.updatedBy=currentSession.inCharge||''; updated++;
+                    }else{
+                        equipment.push({id:id,name:name,category:legacyCategory,serialNo:'',quantity:1,measureUnit:'unit',unitCost:0,totalCost:0,estimatedUsefulLife:0,icsNo:'',fundCluster:'',dateAcquired:'',unit:unit,condition:cond,status:status,addedAt:Date.now(),addedBy:currentSession.inCharge||'',remarks:remarks,icsAligned:false,icsComplianceNote:legacyNote});
+                        added++;
                     }
-                    var act = eqActiveLogFor(ex.id);
-                    ex.name      = name;
-                    ex.category  = cat || ex.category || 'General';
-                    ex.unit      = unit;
-                    ex.condition = cond || ex.condition || 'Good';
-                    if(remarks) ex.remarks = remarks;
-                    // Never reset an active transaction; borrowing history untouched.
-                    if(!act && status) ex.status = status;
-                    updated++;
-                } else {
-                    equipment.push({
-                        id: id,
-                        name: name,
-                        category: cat || 'General',
-                        unit: unit,
-                        condition: cond || 'Good',
-                        status: status || 'AVAILABLE',
-                        addedAt: Date.now(),
-                        addedBy: currentSession.inCharge || '',
-                        remarks: remarks || ''
-                    });
+                    legacy++; problems.push('Row '+(idx+2)+' ('+id+'): imported from the old template; open Edit to complete the new ICS fields.');
+                    return;
+                }
+
+                var rec={id:id,name:name,category:cat,quantity:quantity,measureUnit:measureUnit,unitCost:unitCost,estimatedUsefulLife:useful,assignedUnit:unit};
+                var err=_eqValidateIcsCore(rec);
+                if(err){ invalid++; problems.push('Row '+(idx+2)+(id?' ('+id+')':'')+': '+err); return; }
+                var ex=findEquipment(id);
+                if(ex){
+                    if(!sameUnit(ex.unit,currentSession.facility)){ skipped++; problems.push(id+': existing item belongs to '+ex.unit+'.'); return; }
+                    var act=eqActiveLogFor(ex.id);
+                    ex.name=name; ex.category=cat; ex.serialNo=serialNo; ex.quantity=quantity; ex.measureUnit=measureUnit;
+                    ex.unitCost=unitCost; ex.totalCost=Math.round(quantity*unitCost*100)/100; ex.estimatedUsefulLife=useful;
+                    ex.icsNo=icsNo; ex.fundCluster=fundCluster; ex.dateAcquired=dateAcquired; ex.unit=unit; ex.condition=cond; ex.remarks=remarks||ex.remarks||'';
+                    ex.icsAligned=true; delete ex.icsComplianceNote; ex.updatedAt=Date.now(); ex.updatedBy=currentSession.inCharge||'';
+                    if(!act) ex.status=status; updated++;
+                }else{
+                    equipment.push({id:id,name:name,category:cat,serialNo:serialNo,quantity:quantity,measureUnit:measureUnit,unitCost:unitCost,totalCost:Math.round(quantity*unitCost*100)/100,estimatedUsefulLife:useful,icsNo:icsNo,fundCluster:fundCluster,dateAcquired:dateAcquired,unit:unit,condition:cond,status:status,addedAt:Date.now(),addedBy:currentSession.inCharge||'',remarks:remarks,icsAligned:true});
                     added++;
                 }
             });
-        } catch(err){
-            if(resEl){ resEl.style.color = '#dc2626'; resEl.textContent = 'Could not read the file: ' + (err && err.message ? err.message : 'invalid workbook'); }
-            return;
+        }catch(err){
+            if(resEl){resEl.style.color='#dc2626';resEl.textContent='Could not read the file: '+(err&&err.message?err.message:'invalid workbook');}
+            toast('❌ Equipment import failed.','red'); return;
         }
-        saveEquipData();
-        refreshEquipmentUI();
-        eqAudit('EQUIPMENT_BULK_IMPORT', 'Added: ' + added + ', Updated: ' + updated + ', Skipped: ' + skipped + ', Invalid: ' + invalid + ' (file: ' + f.name + ')');
+        saveEquipData(); refreshEquipmentUI();
+        eqAudit('EQUIPMENT_ICS_BULK_IMPORT','Added: '+added+', Updated: '+updated+', Legacy: '+legacy+', Skipped: '+skipped+', Invalid: '+invalid+' (file: '+f.name+')');
         if(resEl){
-            resEl.style.color = (invalid || skipped) ? '#b45309' : '#16a34a';
-            resEl.innerHTML = '✅ Added: <b>' + added + '</b> &nbsp; ♻ Updated: <b>' + updated + '</b> &nbsp; ⏭ Skipped: <b>' + skipped + '</b> &nbsp; ⚠ Invalid: <b>' + invalid + '</b>' +
-                (problems.length ? '<div style="margin-top:6px;font-weight:400;color:#64748b;font-size:12px;">' + problems.slice(0,12).map(eqEsc).join('<br>') + (problems.length > 12 ? '<br>… and ' + (problems.length - 12) + ' more' : '') + '</div>' : '');
+            resEl.style.color=(invalid||skipped||legacy)?'#b45309':'#16a34a';
+            resEl.innerHTML='✅ Added: <b>'+added+'</b> &nbsp; ♻ Updated: <b>'+updated+'</b> &nbsp; 🧾 Legacy needing ICS completion: <b>'+legacy+'</b> &nbsp; ⏭ Skipped: <b>'+skipped+'</b> &nbsp; ⚠ Invalid: <b>'+invalid+'</b>'+
+                (problems.length?'<div style="margin-top:6px;font-weight:400;color:#64748b;font-size:12px;">'+problems.slice(0,18).map(eqEsc).join('<br>')+(problems.length>18?'<br>… and '+(problems.length-18)+' more':'')+'</div>':'');
         }
-        toast('📥 Equipment import complete — ' + added + ' added, ' + updated + ' updated.', (invalid || skipped) ? 'blue' : 'green');
-        fileInput.value = '';
+        toast('📥 Equipment import complete — '+added+' added, '+updated+' updated'+(legacy?' ('+legacy+' legacy row(s) imported; complete ICS fields).':'.'),(invalid||skipped||legacy)?'yellow':'green');
+        fileInput.value='';
     };
     r.readAsArrayBuffer(f);
 }
