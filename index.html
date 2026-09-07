@@ -5160,10 +5160,17 @@ async function autoLogVisitorAfterReason(){
         }
         if(isDupBlocked(st.qr)){ dupBlockToast(); return; }
         var already = logs.filter(function(l){
-            return l.id === st.qr && l.category === 'VISITOR' && !l.timeout;
+            if(l.id !== st.qr || l.category !== 'VISITOR' || l.timeout) return false;
+            // A visitor may legitimately have an open visit in another office/unit.
+            // Only an open VISITOR record owned by THIS active facility blocks a new TIME-IN.
+            if(window.QLogScope && QLogScope.recordBelongs) return QLogScope.recordBelongs(l, 'VISITOR');
+            var activeUnit = (currentSession && currentSession.facility) || '';
+            var recordUnit = l.facilityName || l.facility || '';
+            if(activeUnit && recordUnit) return String(activeUnit).trim().toUpperCase() === String(recordUnit).trim().toUpperCase();
+            return !activeUnit && !recordUnit; // legacy fallback when facility scoping is unavailable
         });
         if(already.length){
-            setVisitorFlowStatus('\u26a0 This visitor already has an open TIME-IN record.', 'warn');
+            setVisitorFlowStatus('\u26a0 This visitor already has an open TIME-IN record in the current facility.', 'warn');
             return;
         }
 
@@ -5232,6 +5239,22 @@ function saveVisitorLog(data){
             if(!vg.ok){ toast('\u274c ' + vg.message, 'red'); return null; }
         }
         if(isDupBlocked(vid)){ dupBlockToast(); return null; }
+
+        // Authoritative duplicate-open guard: scope by the ACTIVE FACILITY, not globally.
+        // This prevents duplicate open visits inside one office while allowing the same
+        // visitor to be legitimately logged in another facility at the same time.
+        var openHere = logs.some(function(l){
+            if(l.id !== vid || l.category !== 'VISITOR' || l.timeout) return false;
+            if(window.QLogScope && QLogScope.recordBelongs) return QLogScope.recordBelongs(l, 'VISITOR');
+            var activeUnit = (currentSession && currentSession.facility) || '';
+            var recordUnit = l.facilityName || l.facility || '';
+            if(activeUnit && recordUnit) return String(activeUnit).trim().toUpperCase() === String(recordUnit).trim().toUpperCase();
+            return !activeUnit && !recordUnit;
+        });
+        if(openHere){
+            toast('⚠️ This visitor already has an open TIME-IN record in the current facility.', 'yellow');
+            return null;
+        }
 
         var rec = {
             id: vid,

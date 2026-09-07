@@ -10,7 +10,7 @@
      service-worker update.
    ===================================================================== */
 
-const CACHE_NAME = "qlogpro-offline-v17";
+const CACHE_NAME = "qlogpro-offline-v18";
 
 const PRECACHE_URLS = [
   "./",
