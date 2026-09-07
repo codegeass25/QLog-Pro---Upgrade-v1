@@ -18,6 +18,7 @@
 <script src="./libs/xlsx.full.min.js"></script>
 <!-- Premium offline A4 Excel / print formatting helper -->
 <script src="./qlog-export-helper.js"></script>
+<script src="./qlog-clearance.js"></script>
 <!-- QRCode.js -->
 <script src="./libs/qrcode.min.js"></script>
 <!-- html2pdf.js for PDF Generation -->
@@ -1207,6 +1208,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
             <button onclick="exportBookInventory()">📥 Export Library ICS Inventory</button>
             <button onclick="exportAuditTrail()" style="background:#1e40af;">📥 Export Librarian Audit Trail</button>
             <button style="background:#0f172a;" onclick="printBookInventory()">🖨 Print Inventory</button>
+            <button style="background:#7c3aed;" onclick="QLogClearance.openArchive('LIBRARY')">📁 Teacher Clearance Archive</button>
         </div>
         <div id="bookImportResult" style="margin-top:10px;font-weight:bold;color:#16a34a;"></div>
 
@@ -1393,6 +1395,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button style="background:#3b82f6; padding:6px 12px; font-size:13px;" onclick="openEquipBorrowerProfile()">👤 Borrower Equipment History</button>
             <button style="background:#64748b; padding:6px 12px; font-size:13px;" onclick="openEquipRegistryModal()">🗂 Equipment Registry</button>
+            <button style="background:#7c3aed; padding:6px 12px; font-size:13px;" onclick="QLogClearance.openArchive('EQUIPMENT')">📁 Teacher Clearance Archive</button>
         </div>
     </div>
     <p style="margin:8px 0 0; font-size:13px; color:#64748b;">
@@ -1438,6 +1441,20 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
         </div>
         <canvas id="equipCameraCanvas" style="display:none;"></canvas>
     </div>
+</div>
+
+<!-- QR-bound Equipment Return / Clearance -->
+<div class="card" style="border-left:5px solid #16a34a;">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div><h4 style="margin:0;">📥 Return Equipment / Teacher Clearance</h4><p style="margin:5px 0 0;font-size:13px;color:#64748b;">For returns, scan the <b>borrower QR ID first</b>. QLog will show only active equipment bound to that borrower.</p></div>
+        <button id="eqStartReturnModeBtn" onclick="startEquipmentReturnMode()" style="background:#16a34a;">Scan Borrower for Return</button>
+    </div>
+    <div id="eqReturnBorrowerPanel" style="display:none;margin-top:14px;">
+        <div id="eqReturnBorrowerVerified" style="padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:10px;"></div>
+        <div class="full-table"><table><thead><tr><th>Ref</th><th>Equipment</th><th>ID</th><th>Borrowed</th><th>Expected Return</th><th>Status</th><th>Action</th></tr></thead><tbody id="eqReturnBorrowerItems"><tr><td colspan="7">Scan the borrower QR first.</td></tr></tbody></table></div>
+        <button onclick="cancelEquipmentReturnMode()" style="background:#64748b;margin-top:10px;">Cancel Return Mode</button>
+    </div>
+    <div id="eqReturnScanHint" style="font-size:13px;color:#64748b;margin-top:8px;"></div>
 </div>
 
 <!-- Transaction builder -->
@@ -5500,7 +5517,8 @@ function resetDatabase(){
     people = []; logs = []; books = []; borrowLogs = []; reservations = []; auditLogs = []; if(typeof equipment!=='undefined') equipment=[]; if(typeof equipLogs!=='undefined') equipLogs=[];
     renderPeople(); renderLogs();
     if(typeof renderBorrow === 'function') renderBorrow();
-    toast('All data completely deleted.','green');
+    if(window.QLogClearance && QLogClearance.clearAll){ QLogClearance.clearAll().catch(function(e){ console.warn('[clearance-reset]',e); }); }
+    toast('All data completely deleted, including the Teacher Clearance Archive.','green');
     setTimeout(function() { window.location.reload(); }, 1500);
 }
 
@@ -5856,6 +5874,7 @@ function commitStagedTransaction() {
     if(stagedSessionCart.length === 0) return;
     var borrowMsg = document.getElementById('borrowMsg');
     var operationsSucceeded = 0;
+    var clearanceReturns = {};
     
     stagedSessionCart.forEach(function(item) {
         if(item.type === "RETURN") {
@@ -5888,6 +5907,10 @@ function commitStagedTransaction() {
                     for(var t = 0; t < qtyToReturn; t++) triggerReservationFulfillment(item.isbn);
                     qtyToReturn = 0; 
                 }
+            }
+            if(qtyToReturn === 0){
+                if(!clearanceReturns[item.lId]) clearanceReturns[item.lId] = { borrowerId:item.lId, borrowerName:item.learnerName, borrowerCategory:item.category, items:[] };
+                clearanceReturns[item.lId].items.push({ id:item.isbn, isbn:item.isbn, name:item.title, title:item.title, qty:item.qty, returnedAt:new Date().toLocaleString(), condition:'Returned' });
             }
         } else {
             var policy = borrowPolicies[item.category] || { maxBooks: 1, days: 3 };
@@ -5938,6 +5961,12 @@ function commitStagedTransaction() {
     });
 
     localStorage.setItem('borrowLogs', JSON.stringify(borrowLogs));
+    if(window.QLogClearance){
+        Object.keys(clearanceReturns).forEach(function(k){
+            var c=clearanceReturns[k], person=people.filter(function(p){return String(p.id)===String(c.borrowerId);})[0]||{};
+            QLogClearance.issue({module:'LIBRARY',borrowerId:c.borrowerId,borrowerName:c.borrowerName,borrowerCategory:c.borrowerCategory||person.category,person:person,facilityName:'School Library',items:c.items,receivedBy:(currentSession&&currentSession.inCharge)||'',receivedByDesignation:(currentSession&&currentSession.designation)||'',autoPrint:true}).catch(function(err){console.error('[library-clearance]',err);toast('⚠️ Return was saved, but the teacher clearance could not be archived: '+(err.message||err),'yellow');});
+        });
+    }
     logAudit("BULK_TRANSACTION", "Processed " + operationsSucceeded + " operations from Staging Cart.");
     
     stagedSessionCart = []; renderStagedCart(); renderBorrow(); renderBookInventory();
@@ -6898,6 +6927,31 @@ function scanEquipCameraFrame(){
     }
 }
 
+var equipScanIntent = 'BORROW';
+var equipReturnBorrowerId = '';
+
+function startEquipmentReturnMode(){
+    equipScanIntent='RETURN'; equipReturnBorrowerId='';
+    var p=document.getElementById('eqReturnBorrowerPanel'),i=document.getElementById('eqReturnBorrowerItems'),v=document.getElementById('eqReturnBorrowerVerified'),h=document.getElementById('eqReturnScanHint');
+    if(p)p.style.display='block'; if(i)i.innerHTML='<tr><td colspan="7">Scan the borrower QR ID to load active borrowed equipment.</td></tr>'; if(v)v.innerHTML='<b>Waiting for borrower QR...</b>'; if(h)h.textContent='Return Mode active: scan the registered borrower QR first.';
+    clearEquipStaging(); toast('📥 Return Mode active — scan the borrower QR ID first.','blue');
+    if(currentEquipScanMode==='USB'){var hs=document.getElementById('equipHiddenScanner');if(hs)hs.focus();}
+}
+function cancelEquipmentReturnMode(){
+    equipScanIntent='BORROW'; equipReturnBorrowerId=''; var p=document.getElementById('eqReturnBorrowerPanel'),h=document.getElementById('eqReturnScanHint');if(p)p.style.display='none';if(h)h.textContent='';
+    if(currentEquipScanMode==='USB'){var hs=document.getElementById('equipHiddenScanner');if(hs)hs.focus();}
+}
+function renderBorrowerEquipmentForReturn(person){
+    equipReturnBorrowerId=person.id; var p=document.getElementById('eqReturnBorrowerPanel'),v=document.getElementById('eqReturnBorrowerVerified'),tb=document.getElementById('eqReturnBorrowerItems');if(p)p.style.display='block';
+    if(v)v.innerHTML='✅ Borrower verified: <b>'+eqEsc(person.name)+'</b> ('+eqEsc(person.id)+') — only equipment currently bound to this ID is shown below.';
+    var rows=equipLogs.filter(function(l){return String(l.borrowerId)===String(person.id)&&(l.s==='BORROWED'||l.s==='OVERDUE')&&sameUnit(l.unit,currentSession.facility);}).sort(function(a,b){return (a.expectedMs||0)-(b.expectedMs||0);});
+    if(!rows.length){tb.innerHTML='<tr><td colspan="7">No active borrowed equipment is bound to this borrower in '+eqEsc(currentSession.facility)+'.</td></tr>';toast('✅ No active equipment accountability for '+person.name+'.','green');return;}
+    tb.innerHTML=rows.map(function(l){return '<tr><td>'+eqEsc(l.ref)+'</td><td>'+eqEsc(l.eqName)+'</td><td>'+eqEsc(l.eqId)+'</td><td>'+eqEsc(l.borrowedAt)+'</td><td>'+eqEsc(l.expectedAt)+'</td><td>'+eqStatusBadge(l.s)+'</td><td><button style="background:#16a34a;padding:5px 10px;font-size:12px;" onclick="openEquipReturnModal(\''+eqEsc(l.ref)+'\')">Process Return</button></td></tr>';}).join('');
+}
+function requireBorrowerScanForEquipmentReturn(ref){
+    startEquipmentReturnMode(); var log=equipLogs.filter(function(l){return l.ref===ref;})[0]; if(log){var h=document.getElementById('eqReturnScanHint');if(h)h.innerHTML='To return <b>'+eqEsc(log.eqName)+'</b>, scan borrower <b>'+eqEsc(log.borrowerName)+'</b> ('+eqEsc(log.borrowerId)+') first.';}
+}
+
 /* Scan routing: borrower first (must be a registered client), then equipment. */
 function processEquipScan(code){
     if(!code) return;
@@ -6908,6 +6962,17 @@ function processEquipScan(code){
 
     var eqItem = findEquipment(code);
     var person = findPerson(code);
+
+    if(equipScanIntent==='RETURN'){
+        if(!person){
+            toast('⛔ Return Mode requires the registered borrower QR ID first.','red');
+            var hh=document.getElementById('eqReturnScanHint');if(hh)hh.textContent='Unrecognized/non-borrower QR. Scan the borrower ID card first.';
+        }else{
+            renderBorrowerEquipmentForReturn(person); toast('👤 Return borrower verified: '+person.name,'green');
+        }
+        if(currentEquipScanMode==='USB'){var rhs=document.getElementById('equipHiddenScanner');if(rhs)rhs.focus();}
+        return;
+    }
 
     if(eqItem && !person){ applyEquipmentScan(eqItem); }
     else if(person && !eqItem){ applyBorrowerScan(person); }
@@ -7022,6 +7087,11 @@ function recordEquipmentBorrow(){
 function openEquipReturnModal(ref){
     var log = equipLogs.filter(function(l){ return l.ref === ref; })[0];
     if(!log) return;
+    if(equipScanIntent!=='RETURN' || !equipReturnBorrowerId || String(equipReturnBorrowerId)!==String(log.borrowerId)){
+        requireBorrowerScanForEquipmentReturn(ref);
+        toast('⛔ Scan the borrower QR ID before processing this equipment return.','red');
+        return;
+    }
     _eqPendingReturnRef = ref;
     document.getElementById('eqReturnSummary').innerHTML =
         '<b>' + eqEsc(log.eqName) + '</b> (' + eqEsc(log.eqId) + ')<br>' +
@@ -7061,8 +7131,13 @@ function submitEquipmentReturn(){
     }
     saveEquipData();
     eqAudit('EQUIPMENT_RETURN', log.ref + ' | ' + log.eqId + ' | ' + log.s);
+    if(log.s==='RETURNED' && window.QLogClearance){
+        var teacher=findPerson(log.borrowerId)||{};
+        QLogClearance.issue({module:'EQUIPMENT',borrowerId:log.borrowerId,borrowerName:log.borrowerName,borrowerCategory:log.borrowerCategory||teacher.category,person:teacher,facilityName:log.unit||((currentSession&&currentSession.facility)||''),items:[{id:log.eqId,name:log.eqName,qty:1,ref:log.ref,returnedAt:log.returnedAt,condition:log.conditionIn}],receivedBy:log.receivedBy||((currentSession&&currentSession.inCharge)||''),receivedByDesignation:(currentSession&&currentSession.designation)||'',autoPrint:true}).catch(function(err){console.error('[equipment-clearance]',err);toast('⚠️ Return was saved, but the teacher clearance could not be archived: '+(err.message||err),'yellow');});
+    }
     closeEquipReturnModal();
     refreshEquipmentUI();
+    if(equipScanIntent==='RETURN' && equipReturnBorrowerId){var rp=findPerson(equipReturnBorrowerId);if(rp)renderBorrowerEquipmentForReturn(rp);}
     toast('✅ Return recorded: ' + log.eqName + ' (' + log.s + ')', 'green');
 }
 
@@ -7100,7 +7175,7 @@ function renderEquipActive(){
     var html = '';
     rows.forEach(function(l){
         html += '<tr><td>' + eqEsc(l.ref) + '</td><td>' + eqEsc(l.eqName) + '</td><td>' + eqEsc(l.eqId) + '</td><td>' + eqEsc(l.borrowerName) + '</td><td>' + eqEsc(l.borrowerId) + '</td><td>' + eqEsc(l.unit) + '</td><td>' + eqEsc(l.borrowedAt) + '</td><td>' + eqEsc(l.expectedAt) + '</td><td>' + eqStatusBadge(l.s) + '</td><td>' + (l.overdueDays || 0) + '</td>' +
-            '<td><button style="background:#16a34a;padding:5px 10px;font-size:12px;" onclick="openEquipReturnModal(\'' + eqEsc(l.ref) + '\')">Return</button> ' +
+            '<td><button style="background:#16a34a;padding:5px 10px;font-size:12px;" onclick="requireBorrowerScanForEquipmentReturn(\'' + eqEsc(l.ref) + '\')">Scan Borrower to Return</button> ' +
             '<button style="background:#7c3aed;padding:5px 10px;font-size:12px;" onclick="openEquipmentHistory(\'' + eqEsc(l.eqId) + '\')">History</button></td></tr>';
     });
     document.getElementById('eqActiveTbl').innerHTML = html || '<tr><td colspan="11">No active equipment borrowings.</td></tr>';

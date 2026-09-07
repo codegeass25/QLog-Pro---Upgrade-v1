@@ -10,12 +10,13 @@
      service-worker update.
    ===================================================================== */
 
-const CACHE_NAME = "qlogpro-offline-v16";
+const CACHE_NAME = "qlogpro-offline-v17";
 
 const PRECACHE_URLS = [
   "./",
   "./index.html",
   "./qlog-export-helper.js",
+  "./qlog-clearance.js",
   "./qlog-scope.js",
   "./qlog-ui-overhaul.css",
   "./qlog-ui-overhaul.js",
@@ -51,18 +52,10 @@ const PRECACHE_URLS = [
   "./models/ppocr/det.onnx",
   "./models/ppocr/rec.onnx",
   "./models/ppocr/en_dict.json",
-  "./models/age_gender_model-weights_manifest.json",
-  "./models/age_gender_model.bin",
-  "./models/face_expression_model-weights_manifest.json",
-  "./models/face_expression_model.bin",
   "./models/face_landmark_68_model-weights_manifest.json",
   "./models/face_landmark_68_model.bin",
-  "./models/face_landmark_68_tiny_model-weights_manifest.json",
-  "./models/face_landmark_68_tiny_model.bin",
   "./models/face_recognition_model-weights_manifest.json",
   "./models/face_recognition_model.bin",
-  "./models/ssd_mobilenetv1_model-weights_manifest.json",
-  "./models/ssd_mobilenetv1_model.bin",
   "./models/tiny_face_detector_model-weights_manifest.json",
   "./models/tiny_face_detector_model.bin",
 ];
