@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>QLog Pro Ultimate - Enhanced</title>
+<title>QLog Pro</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <!-- Fonts (bundled locally - no external requests) -->
 <link rel="stylesheet" href="./fonts/fonts.css">
@@ -16,6 +16,8 @@
 <!-- JSZip + SheetJS for Excel (JSZip is used to preserve real Excel data-validation dropdowns) -->
 <script src="./libs/jszip.min.js"></script>
 <script src="./libs/xlsx.full.min.js"></script>
+<!-- Premium offline A4 Excel / print formatting helper -->
+<script src="./qlog-export-helper.js"></script>
 <!-- QRCode.js -->
 <script src="./libs/qrcode.min.js"></script>
 <!-- html2pdf.js for PDF Generation -->
@@ -743,9 +745,43 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
 .toast.yellow{ background: var(--grad-warn); color:#111; }
 .toast.blue  { background: var(--grad-brand); }
 
+
+/* ---------- COA ICS responsive forms ---------- */
+.ics-account-chip{display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;font-size:12px;font-weight:800;white-space:nowrap;}
+.ics-note{padding:10px 12px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:10px;color:#1e3a8a;font-size:12.5px;line-height:1.45;}
+.ics-grid{display:grid;grid-template-columns:repeat(4,minmax(145px,1fr));gap:10px;align-items:end;}
+.ics-grid>div{min-width:0;}
+.ics-grid .span-2{grid-column:span 2;}
+.ics-grid label{display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;}
+.ics-grid input,.ics-grid select{width:100%;margin:0;}
+.responsive-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.responsive-actions input,.responsive-actions select{margin:0;}
+.book-filter-row select{min-width:170px;}
+.wide-ics-table{min-width:1900px !important;}
+
+
+/* ---------- Multi-Log Reports Hub ---------- */
+.report-hub-controls{display:grid;grid-template-columns:minmax(210px,1.4fr) repeat(2,minmax(145px,.8fr)) minmax(180px,1fr) minmax(180px,1fr);gap:10px;align-items:end;}
+.report-hub-controls>div{min-width:0;}
+.report-hub-controls label{display:block;font-size:11px;font-weight:800;color:#64748b;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em;}
+.report-hub-controls input,.report-hub-controls select{width:100%;margin:0;}
+.report-hub-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0;}
+.report-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin:14px 0;}
+.report-summary-card{border:1px solid #dbeafe;background:linear-gradient(135deg,#f8fbff,#eff6ff);border-radius:12px;padding:12px;min-width:0;}
+.report-summary-card .k{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+.report-summary-card .v{font-size:22px;color:#1e3a8a;font-weight:850;margin-top:3px;overflow-wrap:anywhere;}
+.report-context-note{font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;margin-top:10px;line-height:1.45;}
+.report-table-wrap{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:12px;}
+.report-table-wrap table{min-width:900px;margin:0;}
+@media (max-width:1050px){.report-hub-controls{grid-template-columns:repeat(2,minmax(0,1fr));}.report-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:600px){.report-hub-controls{grid-template-columns:1fr}.report-summary-grid{grid-template-columns:1fr 1fr}.report-hub-actions>*{flex:1 1 100%;width:100%!important;}.report-table-wrap table{min-width:760px;}}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 900px){
   body{ padding: 12px; font-size: 13.5px; }
+  .ics-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .modal-content{width:min(96vw,1100px);max-height:92vh;overflow:auto;}
+  .full-table{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .header{ padding: 14px 16px; }
   .header h2{ font-size: 17px; }
   .nav{ position: static; padding: 4px; }
@@ -756,6 +792,11 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
 }
 @media (max-width: 520px){
   .nav button{ flex-basis: calc(50% - 4px); }
+  .ics-grid{grid-template-columns:1fr;}
+  .ics-grid .span-2{grid-column:span 1;}
+  .responsive-actions>*{flex:1 1 100%;width:100% !important;}
+  .book-filter-row select{min-width:0;}
+  .ics-account-chip{white-space:normal;}
   .logout-btn{ top: 10px; right: 10px; padding: 6px 10px; font-size: 12px; }
 }
 
@@ -770,6 +811,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
 ::-webkit-scrollbar-thumb:hover{ background: var(--text-soft); }
 
 </style>
+<link rel="stylesheet" href="./qlog-ui-overhaul.css">
 </head>
 <body>
 
@@ -811,7 +853,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
 <div id="installGateOverlay">
     <div class="startup-card config-form" id="installGateCard">
         <h3>🛡️ Installation Password</h3>
-        <p class="auth-sub">This copy of QLog Pro Ultimate must be activated with the Installation Password provided by the system owner.</p>
+        <p class="auth-sub">This copy of QLog Pro must be activated with the Installation Password provided by the system owner.</p>
         <label>Installation Password:</label>
         <input type="password" id="installGatePassword" placeholder="Enter installation password" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" name="qlog-installation-key" onkeypress="if(event.key==='Enter') submitInstallGate()">
         <p class="auth-err" id="installGateError"></p>
@@ -948,7 +990,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
     </svg>
     <div>
         <div id="facilityTitle"></div>
-        <h2>QLog Pro Ultimate</h2>
+        <h2>QLog Pro</h2>
     </div>
 </div>
 
@@ -1146,39 +1188,60 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
 
 <div id="bookinv" class="tab">
     <div class="card">
-    <h3>📚 Book Inventory Management</h3>
-    <hr><h4>📥 Book Inventory Bulk Upload</h4>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <input type="file" id="bookExcelFile" accept=".xlsx,.xls" style="width:auto;">
-        <button onclick="importBooks()">Import Books</button>
-        <button style="background:#64748b;" onclick="downloadBookTemplate()">Download Template</button>
-    </div>
-    
-    <div style="margin-top: 15px; margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
-        <button onclick="exportBookInventory()">📥 Export Book Inventory (.xlsx)</button>
-        <button onclick="exportAuditTrail()" style="background:#1e40af;">📥 Export Librarian Audit Trail</button>
-        <button style="background:#0f172a;" onclick="printBookInventory()">🖨 Print Inventory</button>
-    </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <div>
+                <h3 style="margin:0;">📚 COA ICS-Style Library Inventory</h3>
+                <div style="font-size:12px;color:#64748b;margin-top:4px;max-width:920px;">Operational library custody registry aligned to the COA semi-expendable books account (10406020) and ICS item fields, while preserving QLog's existing borrowing, returns, reservations and audit history.</div>
+            </div>
+            <span class="ics-account-chip">COA 10406020 · Semi-Expendable Books</span>
+        </div>
+        <div class="ics-note" style="margin-top:12px;">Books are maintained here—not in the Equipment Registry. Organize titles by <b>Subject</b> and <b>Year Level</b>; legacy book records remain usable and can be completed into ICS-style records through Edit.</div>
 
-    <div id="bookImportResult" style="margin-top:10px; font-weight:bold; color:#16a34a;"></div>
-    <hr><h4>➕ Add New Book</h4>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input id="newISBN" placeholder="ISBN" style="flex:1;">
-        <input id="newTitle" placeholder="Book Title" style="flex:2;">
-        <input id="newAuthor" placeholder="Author" style="flex:1;">
-        <input id="newCategory" placeholder="Category" style="flex:1;">
-        <input id="newCopies" type="number" placeholder="No. of Copies" style="flex:1;">
-        <button onclick="addBook()">Save Book</button>
+        <hr><h4>📥 Library Inventory Bulk Upload</h4>
+        <div class="responsive-actions">
+            <input type="file" id="bookExcelFile" accept=".xlsx,.xls" style="width:auto;">
+            <button onclick="importBooks()">Import Books</button>
+            <button style="background:#64748b;" onclick="downloadBookTemplate()">⬇ Download ICS Template</button>
+        </div>
+        <div style="margin-top:12px;" class="responsive-actions">
+            <button onclick="exportBookInventory()">📥 Export Library ICS Inventory</button>
+            <button onclick="exportAuditTrail()" style="background:#1e40af;">📥 Export Librarian Audit Trail</button>
+            <button style="background:#0f172a;" onclick="printBookInventory()">🖨 Print Inventory</button>
+        </div>
+        <div id="bookImportResult" style="margin-top:10px;font-weight:bold;color:#16a34a;"></div>
+
+        <hr><h4>➕ Add / Complete ICS Book Record</h4>
+        <div class="ics-grid">
+            <div><label>Inventory Item No. *</label><input id="newBookId" placeholder="e.g. LIB-ENG-07-0001"></div>
+            <div><label>ISBN *</label><input id="newISBN" placeholder="e.g. 9789711234567"></div>
+            <div class="span-2"><label>Book Title *</label><input id="newTitle" placeholder="Book title"></div>
+            <div><label>Author / Publisher</label><input id="newAuthor" placeholder="Author / Publisher"></div>
+            <div><label>Subject *</label><input id="newSubject" list="bookSubjectList" placeholder="e.g. English"><datalist id="bookSubjectList"></datalist></div>
+            <div><label>Year Level *</label><input id="newYearLevel" list="bookYearLevelList" placeholder="e.g. Grade 7"><datalist id="bookYearLevelList"></datalist></div>
+            <div><label>Quantity / Copies *</label><input id="newCopies" type="number" min="1" step="1" placeholder="1"></div>
+            <div><label>Unit Cost (₱) *</label><input id="newBookUnitCost" type="number" min="0" step="0.01" placeholder="0.00"></div>
+            <div><label>Useful Life (years) *</label><input id="newBookUsefulLife" type="number" min="2" step="1" placeholder="e.g. 5"></div>
+            <div><label>ICS No.</label><input id="newBookIcsNo" placeholder="ICS control no."></div>
+            <div><label>Fund Cluster</label><input id="newBookFundCluster" placeholder="e.g. 01"></div>
+            <div><label>Date Acquired</label><input id="newBookDateAcquired" type="date"></div>
+            <div><label>Assigned Unit</label><input id="newBookAssignedUnit" value="School Library" readonly></div>
+        </div>
+        <div class="responsive-actions" style="margin-top:12px;">
+            <button id="bookSaveBtn" onclick="addBook()">+ Save ICS Book</button>
+            <button id="bookCancelEditBtn" onclick="cancelBookEdit()" style="display:none;background:#64748b;">Cancel Edit</button>
+        </div>
+
+        <hr><h4>🔍 Search / Filter Library Inventory</h4>
+        <div class="responsive-actions book-filter-row">
+            <input id="bookSearch" placeholder="🔍 Search inventory no., ISBN, title, author, subject, year level, ICS no..." onkeyup="renderBookInventory()" style="flex:2;">
+            <select id="bookSubjectFilter" onchange="renderBookInventory()"><option value="ALL">All Subjects</option></select>
+            <select id="bookYearFilter" onchange="renderBookInventory()"><option value="ALL">All Year Levels</option></select>
+        </div>
     </div>
-    <hr><h4>🔍 Search Inventory</h4>
-    <input id='bookSearch' placeholder='🔍 Search Book ID, ISBN, Title, Author, Category...' onkeyup='renderBookInventory()'>
-    </div>
-    <div class='full-table'>
-        <table>
-            <thead>
-                <tr><th>ISBN</th><th>Title</th><th>Author</th><th>Category</th><th>Total Copies</th><th>Borrowed</th><th>Lost</th><th>Damaged</th><th>Remaining</th><th>Status</th></tr>
-            </thead>
-            <tbody id='bookInventoryTbl'></tbody>
+    <div class="full-table">
+        <table class="wide-ics-table">
+            <thead><tr><th>Inventory Item No.</th><th>ISBN</th><th>Title</th><th>Author / Publisher</th><th>Subject</th><th>Year Level</th><th>COA Account</th><th>Qty</th><th>Unit Cost</th><th>Total Cost</th><th>Useful Life</th><th>ICS No.</th><th>Fund Cluster</th><th>Date Acquired</th><th>Borrowed</th><th>Lost</th><th>Damaged</th><th>Remaining</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="bookInventoryTbl"></tbody>
         </table>
     </div>
 </div>
@@ -1468,7 +1531,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
             <div style="flex:1; min-width:160px;"><label style="font-size:13px;font-weight:600;">Inventory Item No. / QR Code *</label><input id="eqNewId" placeholder="e.g. SEMI-ICT-2026-001"></div>
             <div style="flex:2; min-width:220px;"><label style="font-size:13px;font-weight:600;">Description / Equipment Name *</label><input id="eqNewName" placeholder="e.g. Laptop Computer, Model…, Serial…"></div>
-            <div style="flex:1; min-width:170px;"><label style="font-size:13px;font-weight:600;">COA Semi-Expendable Category *</label><input id="eqNewCategory" list="eqCategoryList" placeholder="e.g. ICT Equipment"><datalist id="eqCategoryList"></datalist></div>
+            <div style="flex:1; min-width:190px;"><label style="font-size:13px;font-weight:600;">COA Semi-Expendable Category *</label><input id="eqNewCategory" list="eqCategoryList" placeholder="Select Assigned Unit first" onfocus="updateEquipCategorySuggestions()"><datalist id="eqCategoryList"></datalist><div id="eqCategoryHint" style="font-size:11px;color:#64748b;margin-top:4px;">Suggestions are filtered by Assigned Unit. Books are managed in Library Inventory.</div></div>
             <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">Serial No.</label><input id="eqNewSerialNo" placeholder="Serial number, if any"></div>
             <div style="flex:.7; min-width:100px;"><label style="font-size:13px;font-weight:600;">Quantity *</label><input id="eqNewQuantity" type="number" min="1" step="1" value="1"></div>
             <div style="flex:.8; min-width:110px;"><label style="font-size:13px;font-weight:600;">Unit *</label><input id="eqNewMeasureUnit" list="eqMeasureUnitList" value="unit" placeholder="unit"><datalist id="eqMeasureUnitList"></datalist></div>
@@ -1477,7 +1540,7 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
             <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">ICS No.</label><input id="eqNewIcsNo" placeholder="ICS control no."></div>
             <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">Fund Cluster</label><input id="eqNewFundCluster" placeholder="e.g. 01"></div>
             <div style="flex:1; min-width:150px;"><label style="font-size:13px;font-weight:600;">Date Acquired</label><input id="eqNewDateAcquired" type="date"></div>
-            <div style="flex:1; min-width:170px;"><label style="font-size:13px;font-weight:600;">Assigned Unit *</label><input id="eqNewUnit" list="eqUnitList" placeholder="e.g. Science Laboratory"><datalist id="eqUnitList"></datalist></div>
+            <div style="flex:1; min-width:190px;"><label style="font-size:13px;font-weight:600;">Assigned Unit *</label><input id="eqNewUnit" list="eqUnitList" placeholder="e.g. Science Laboratory" oninput="updateEquipCategorySuggestions()" onchange="updateEquipCategorySuggestions(true)"><datalist id="eqUnitList"></datalist></div>
             <div style="flex:1; min-width:130px;"><label style="font-size:13px;font-weight:600;">Condition</label>
                 <select id="eqNewCondition"><option value="Good">Good</option><option value="Fair">Fair</option><option value="With Minor Defect">With Minor Defect</option><option value="For Maintenance">For Maintenance</option><option value="Damaged">Damaged</option></select>
             </div>
@@ -1574,31 +1637,48 @@ body.mobile-tablet-id-capture .id-mobile-capture-btn{ display:inline-flex; }
 
 <div id="reports" class="tab">
 <div class="card">
-<h3>📈 Generate Reports</h3>
-<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-<input type="date" id="reportDate" onchange="renderReports()" title="Filter by Date" style="width:auto;">
-<select id="reportCategory" onchange="renderReports()" style="width:auto;">
-<option value="ALL">All Categories</option>
-<option value="TEACHING">Teaching</option>
-<option value="NON-TEACHING">Non-Teaching</option>
-<option value="GUARD">Guard</option>
-<option value="VISITOR">Visitor</option>
-<option value="CANTEEN PERSONNEL">Canteen Personnel</option>
-<option value="STUDENT">Student</option>
-<option value="UTILITY">Utility</option>
-</select>
-<button style="background:#0f172a;" onclick="printReport()">🖨 Print Report</button>
-<button onclick="exportLogs()">📥 Export All Logs (.xlsx)</button>
-<span style="flex-grow:1"></span>
-<button onclick="resetDatabase()">🗑 Reset Database</button>
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+        <div>
+            <h3 style="margin:0;">📈 Multi-Log Reports Center</h3>
+            <p style="margin:5px 0 0;color:#64748b;font-size:12.5px;">Generate A4-ready reports across QLog modules—not only the Dashboard Logbook.</p>
+        </div>
+        <span class="ics-account-chip">OFFLINE • A4 PRINT/EXCEL READY</span>
+    </div>
+    <div class="report-hub-controls" style="margin-top:14px;">
+        <div><label>Report / Log Type</label><select id="reportType" onchange="updateReportControls();renderReports();">
+            <option value="ATTENDANCE">Dashboard / Attendance Logbook</option>
+            <option value="VISITOR">Visitor Logs</option>
+            <option value="CLIENT">Client Inventory</option>
+            <option value="LIBRARY_INVENTORY">Library COA ICS Inventory</option>
+            <option value="LIBRARY_BORROW">Library Borrow / Return Logs</option>
+            <option value="LIBRARY_RESERVATION">Library Reservation Queue</option>
+            <option value="LIBRARY_AUDIT">Library / System Audit Trail</option>
+            <option value="EQUIPMENT_INVENTORY">Equipment COA ICS Registry</option>
+            <option value="EQUIPMENT_BORROW">Equipment Borrow / Return Logs</option>
+        </select></div>
+        <div><label>From Date</label><input type="date" id="reportDateFrom" onchange="renderReports()"></div>
+        <div><label>To Date</label><input type="date" id="reportDateTo" onchange="renderReports()"></div>
+        <div><label id="reportFilterLabel">Category / Status</label><select id="reportCategory" onchange="renderReports()"><option value="ALL">All</option></select></div>
+        <div><label>Search</label><input id="reportSearch" placeholder="Search current report…" oninput="renderReports()"></div>
+    </div>
+    <div id="reportContextNote" class="report-context-note">Choose a report type. Available filters change automatically based on the selected module.</div>
+    <div class="report-hub-actions">
+        <button style="background:#0f172a;" onclick="printReport()">🖨 Print A4 Report</button>
+        <button onclick="exportLogs()">📥 Download Formatted Excel</button>
+        <button style="background:#64748b;" onclick="clearReportFilters()">↺ Clear Filters</button>
+        <span style="flex-grow:1"></span>
+        <button onclick="resetDatabase()">🗑 Reset Database</button>
+    </div>
 </div>
-</div>
-<div class="full-table">
-<div id="printArea" style="padding: 20px;">
-<h2 style="text-align:center; margin-bottom: 5px; color:#1e3a8a;">QLog Pro Ultimate</h2>
-<h4 style="text-align:center; margin-top: 0; color:#64748b;">DATE OF SAVED LOG: <span id="printDate"></span></h4>
-<table><thead><tr><th>No</th><th>Name</th><th>Grade & Section</th><th>Time In</th><th>Time Out</th><th>Category</th><th>Reason</th><th>Date</th></tr></thead><tbody id="reportTbl"></tbody></table>
-</div>
+<div id="reportSummary" class="report-summary-grid"></div>
+<div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:14px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;">
+        <div><b id="reportTitlePreview">Dashboard / Attendance Logbook</b><div id="reportSubtitlePreview" style="font-size:12px;color:#64748b;margin-top:2px;"></div></div>
+        <span id="reportOrientationBadge" class="ics-account-chip">A4 AUTO</span>
+    </div>
+    <div class="report-table-wrap">
+        <table><thead><tr id="reportHead"></tr></thead><tbody id="reportTbl"></tbody></table>
+    </div>
 </div>
 </div>
 
@@ -1713,8 +1793,47 @@ function _xmlEsc(v){
    downloaded .xlsx contains REAL dropdown validation in Excel/LibreOffice. */
 async function downloadWorkbookWithValidations(wb, sheetName, validations, filename){
     if(typeof XLSX === 'undefined') throw new Error('Local Excel library not loaded.');
+    validations = validations || [];
+
+    /* Excel limits literal list-validation formulas to about 255 characters.
+       COA category and library subject lists can exceed that, so put every
+       validation source on a hidden worksheet and refer to it through defined
+       names. This keeps dropdowns reliable in desktop Excel and LibreOffice. */
+    var prepared = validations.map(function(v){
+        var copy = {};
+        Object.keys(v || {}).forEach(function(k){ copy[k] = v[k]; });
+        copy.values = (v.values || []).map(function(x){ return String(x); });
+        return copy;
+    });
+    if(prepared.length){
+        var base='__QLogValidation', validationSheetName=base, suffix=1;
+        while(wb.SheetNames.indexOf(validationSheetName)!==-1){ validationSheetName=base+(suffix++); }
+        var maxRows=prepared.reduce(function(m,v){ return Math.max(m,v.values.length); },0);
+        var matrix=[];
+        for(var r=0;r<maxRows;r++){
+            var row=[];
+            for(var c=0;c<prepared.length;c++) row.push(prepared[c].values[r]===undefined?'':prepared[c].values[r]);
+            matrix.push(row);
+        }
+        var validationSheet=XLSX.utils.aoa_to_sheet(matrix.length?matrix:[['']]);
+        XLSX.utils.book_append_sheet(wb,validationSheet,validationSheetName);
+        wb.Workbook = wb.Workbook || {};
+        wb.Workbook.Sheets = wb.Workbook.Sheets || [];
+        while(wb.Workbook.Sheets.length < wb.SheetNames.length) wb.Workbook.Sheets.push({});
+        wb.Workbook.Sheets[wb.SheetNames.indexOf(validationSheetName)].Hidden = 2;
+        wb.Workbook.Names = (wb.Workbook.Names || []).filter(function(n){ return String(n.Name||'').indexOf('_QLOG_DV_')!==0; });
+        prepared.forEach(function(v,i){
+            var safeName='_QLOG_DV_'+(i+1);
+            var col=XLSX.utils.encode_col(i);
+            var end=Math.max(1,v.values.length);
+            var escapedSheet=validationSheetName.replace(/'/g,"''");
+            wb.Workbook.Names.push({Name:safeName,Ref:"'"+escapedSheet+"'!$"+col+"$1:$"+col+"$"+end});
+            v._formula1=safeName;
+        });
+    }
+
     var data = XLSX.write(wb, { bookType:'xlsx', type:'array' });
-    if(typeof JSZip === 'undefined' || !validations || !validations.length){
+    if(typeof JSZip === 'undefined' || !prepared.length){
         var fallback = new Blob([data], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
         var fa = document.createElement('a'); fa.href = URL.createObjectURL(fallback); fa.download = filename;
         document.body.appendChild(fa); fa.click(); fa.remove(); setTimeout(function(){ URL.revokeObjectURL(fa.href); }, 1500);
@@ -1726,23 +1845,25 @@ async function downloadWorkbookWithValidations(wb, sheetName, validations, filen
     var entry = zip.file(path);
     if(!entry) throw new Error('Worksheet package entry not found: ' + path);
     var xml = await entry.async('string');
-    var rules = validations.map(function(v){
-        var values = (v.values || []).map(function(x){ return String(x).replace(/"/g,'""'); }).join(',');
+    var rules = prepared.map(function(v){
         return '<dataValidation type="list" allowBlank="' + (v.allowBlank === false ? '0' : '1') +
             '" showInputMessage="1" showErrorMessage="1" errorStyle="stop" sqref="' + _xmlEsc(v.sqref) +
             '" promptTitle="' + _xmlEsc(v.promptTitle || 'Choose from list') +
             '" prompt="' + _xmlEsc(v.prompt || 'Select a value from the dropdown list.') +
             '" errorTitle="' + _xmlEsc(v.errorTitle || 'Invalid value') +
             '" error="' + _xmlEsc(v.error || 'Please choose a value from the dropdown list.') +
-            '"><formula1>&quot;' + _xmlEsc(values) + '&quot;</formula1></dataValidation>';
+            '"><formula1>' + _xmlEsc(v._formula1 || '') + '</formula1></dataValidation>';
     }).join('');
-    var dvXml = '<dataValidations count="' + validations.length + '">' + rules + '</dataValidations>';
+    var dvXml = '<dataValidations count="' + prepared.length + '">' + rules + '</dataValidations>';
     var anchors = ['<hyperlinks','<printOptions','<pageMargins','<pageSetup','<headerFooter','<rowBreaks','<colBreaks','<customProperties','<cellWatches','<ignoredErrors','<smartTags','<drawing','<legacyDrawing','<picture','<oleObjects','<controls','<webPublishItems','<tableParts','<extLst','</worksheet>'];
     var pos = -1;
     anchors.forEach(function(a){ var i = xml.indexOf(a); if(i !== -1 && (pos === -1 || i < pos)) pos = i; });
     if(pos < 0) throw new Error('Could not locate worksheet XML insertion point.');
     xml = xml.slice(0,pos) + dvXml + xml.slice(pos);
     zip.file(path, xml);
+    if(typeof QLogExport !== 'undefined' && QLogExport.styleWorkbookZip){
+        await QLogExport.styleWorkbookZip(zip, wb, { defaultMode:'template', orientation:'auto' });
+    }
     var blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{level:6} });
     var a = document.createElement('a');
     var href = URL.createObjectURL(blob); a.href = href; a.download = filename;
@@ -5228,77 +5349,199 @@ function renderLogs(){
     renderReports();
 }
 
+
+var _currentReportModel = null;
+var _reportLastType = '';
+
+function _reportEsc(v){
+    if(typeof QLogExport !== 'undefined' && QLogExport.esc) return QLogExport.esc(v);
+    return String(v===undefined||v===null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function _reportDateMs(v){
+    if(v===undefined||v===null||v==='') return 0;
+    if(typeof v==='number') return v;
+    var str=String(v).trim();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(str)){
+        var d0=new Date(str+'T00:00:00'); return isNaN(d0.getTime())?0:d0.getTime();
+    }
+    var d=new Date(str); return isNaN(d.getTime())?0:d.getTime();
+}
+function _reportDatePass(ms){
+    var fromEl=document.getElementById('reportDateFrom'), toEl=document.getElementById('reportDateTo');
+    if(!ms) return !(fromEl&&fromEl.value) && !(toEl&&toEl.value);
+    if(fromEl&&fromEl.value){ var from=new Date(fromEl.value+'T00:00:00').getTime(); if(ms<from) return false; }
+    if(toEl&&toEl.value){ var to=new Date(toEl.value+'T23:59:59.999').getTime(); if(ms>to) return false; }
+    return true;
+}
+function _reportBookByIsbn(isbn){
+    for(var i=0;i<books.length;i++) if(String(books[i].isbn||'')===String(isbn||'')) return books[i];
+    return null;
+}
+function _reportUnique(rows,key){
+    var seen={}, out=[];
+    rows.forEach(function(r){ var v=String(r[key]||'').trim(); if(v && !seen[v.toUpperCase()]){seen[v.toUpperCase()]=1;out.push(v);} });
+    return out.sort(function(a,b){return a.localeCompare(b);});
+}
+function _reportMoney(v){return Number(v)||0;}
+function _reportModel(type){
+    var model={type:type,title:'QLog Report',subtitle:'',filename:'QLog_Report.xlsx',sheetName:'Report',filterLabel:'Filter',filterKey:'_filter',dateFilter:true,columns:[],rows:[]};
+    if(type==='VISITOR'){
+        model.title='Visitor Logs Report'; model.subtitle='Visitor entry/exit, reason for visit and identity-verification records'; model.filename='QLOG_Visitor_Logs.xlsx'; model.sheetName='Visitor Logs'; model.filterLabel='Reason for Visit';
+        model.columns=[{key:'no',label:'No.',width:7,align:'center'},{key:'name',label:'Visitor Name',width:28},{key:'id',label:'Visitor ID',width:18},{key:'reason',label:'Reason for Visit',width:32},{key:'timeIn',label:'Time In',width:16,align:'center'},{key:'timeOut',label:'Time Out',width:16,align:'center'},{key:'date',label:'Date',width:14,align:'center'},{key:'verification',label:'Identity Verification',width:26}];
+        model.rows=logs.filter(function(l){return String(l.category||'').toUpperCase()==='VISITOR';}).map(function(l){return {name:l.name||'',id:l.id||'',reason:l.reason||'',timeIn:l.timein||'',timeOut:l.timeout||'',date:l.date||'',verification:l.identityVerification||(l.identityVerificationMethod==='MANUAL_NO_ID'?'MANUAL ENTRY — NO ID PRESENTED':(l.idVerified?'VALID ID / OCR':'')),_filter:l.reason||'',_date:_reportDateMs(l.date)};});
+    } else if(type==='CLIENT'){
+        model.title='Client Inventory Report'; model.subtitle='Registered students and personnel in the QLog client registry'; model.filename='QLOG_Client_Inventory_Report.xlsx'; model.sheetName='Client Inventory'; model.filterLabel='Client Category'; model.dateFilter=false;
+        model.columns=[{key:'no',label:'No.',width:7,align:'center'},{key:'id',label:'ID / LRN / Employee No.',width:22},{key:'name',label:'Complete Name',width:32},{key:'category',label:'Category',width:20},{key:'grade',label:'Grade Level',width:14,align:'center'},{key:'section',label:'Section',width:18}];
+        model.rows=people.map(function(x){return {id:x.id||'',name:x.name||'',category:x.category||'',grade:x.grade||'',section:x.section||'',_filter:x.category||'',_date:0};});
+    } else if(type==='LIBRARY_INVENTORY'){
+        model.title='Library COA ICS Inventory Report'; model.subtitle=LIB_COA_ACCOUNT_CODE+' — '+LIB_COA_CATEGORY+' • organized by Subject and Year Level'; model.filename='QLOG_COA_ICS_Library_Inventory_Report.xlsx'; model.sheetName='Library ICS'; model.filterLabel='Subject';
+        model.columns=[{key:'no',label:'No.',width:7,align:'center'},{key:'inventoryNo',label:'Inventory Item No.',width:20},{key:'isbn',label:'ISBN',width:17},{key:'title',label:'Title',width:34},{key:'author',label:'Author / Publisher',width:24},{key:'subject',label:'Subject',width:20},{key:'yearLevel',label:'Year Level',width:16},{key:'qty',label:'Qty',width:9,type:'number',align:'center'},{key:'unitCost',label:'Unit Cost',width:14,type:'money'},{key:'totalCost',label:'Total Cost',width:15,type:'money'},{key:'usefulLife',label:'Useful Life',width:13,align:'center'},{key:'icsNo',label:'ICS No.',width:18},{key:'fundCluster',label:'Fund Cluster',width:13,align:'center'},{key:'dateAcquired',label:'Date Acquired',width:14,align:'center'},{key:'icsStatus',label:'ICS Status',width:16,align:'center'}];
+        model.rows=books.map(function(b){return {inventoryNo:b.id||'',isbn:b.isbn||'',title:b.title||'',author:b.author||'',subject:b.subject||b.category||'',yearLevel:b.yearLevel||'',qty:Number(b.copies)||0,unitCost:_reportMoney(b.unitCost),totalCost:(b.totalCost!==undefined?_reportMoney(b.totalCost):((Number(b.copies)||0)*_reportMoney(b.unitCost))),usefulLife:b.estimatedUsefulLife||'',icsNo:b.icsNo||'',fundCluster:b.fundCluster||'',dateAcquired:b.dateAcquired||'',icsStatus:b.icsAligned?'COMPLETE':'COMPLETE ICS FIELDS',_filter:b.subject||b.category||'',_date:_reportDateMs(b.dateAcquired)||_reportDateMs(b.addedAt)};});
+    } else if(type==='LIBRARY_BORROW'){
+        model.title='Library Borrowing & Returns Report'; model.subtitle='Book circulation transactions including active, overdue, returned, damaged and lost records'; model.filename='QLOG_Library_Borrow_Return_Logs.xlsx'; model.sheetName='Library Borrow Logs'; model.filterLabel='Transaction Status';
+        model.columns=[{key:'no',label:'No.',width:7,align:'center'},{key:'borrowerId',label:'Borrower ID',width:18},{key:'borrower',label:'Borrower Name',width:28},{key:'gradeSection',label:'Grade & Section',width:18},{key:'isbn',label:'ISBN',width:17},{key:'title',label:'Book Title',width:30},{key:'qty',label:'Qty',width:8,type:'number',align:'center'},{key:'status',label:'Status',width:13,align:'center'},{key:'borrowed',label:'Borrowed',width:20},{key:'due',label:'Due Date',width:16},{key:'returned',label:'Returned',width:20},{key:'overdue',label:'Overdue Days',width:12,type:'number',align:'center'},{key:'remarks',label:'Remarks',width:32}];
+        model.rows=borrowLogs.map(function(r){var bk=_reportBookByIsbn(r.b);return {borrowerId:r.l||'',borrower:r.learnerName||'',gradeSection:r.gs||'',isbn:r.b||'',title:r.title||(bk?bk.title:'')||'',qty:Number(r.qty)||1,status:r.s||'',borrowed:r.borrowedAt||'',due:r.dueDateStr||'',returned:r.returnedAt||'',overdue:Number(r.overdueDays)||0,remarks:r.remarks||'',_filter:r.s||'',_date:_reportDateMs(r.borrowedAt)};});
+    } else if(type==='LIBRARY_RESERVATION'){
+        model.title='Library Reservation Queue Report'; model.subtitle='Current waiting-list reservations for library materials'; model.filename='QLOG_Library_Reservation_Queue.xlsx'; model.sheetName='Reservations'; model.filterLabel='Subject';
+        model.columns=[{key:'no',label:'No.',width:7,align:'center'},{key:'reservationId',label:'Reservation ID',width:22},{key:'borrowerId',label:'Borrower ID',width:18},{key:'borrower',label:'Borrower Name',width:28},{key:'isbn',label:'ISBN',width:17},{key:'title',label:'Book Title',width:30},{key:'subject',label:'Subject',width:18},{key:'qty',label:'Qty',width:8,type:'number',align:'center'},{key:'created',label:'Queued On',width:20}];
+        model.rows=reservations.map(function(r){var bk=_reportBookByIsbn(r.isbn);return {reservationId:r.id||'',borrowerId:r.lId||'',borrower:r.learnerName||'',isbn:r.isbn||'',title:bk?bk.title:'',subject:bk?(bk.subject||bk.category||''):'',qty:Number(r.qty)||1,created:r.createdAt||'',_filter:bk?(bk.subject||bk.category||''):'',_date:_reportDateMs(r.createdAt)};});
+    } else if(type==='LIBRARY_AUDIT'){
+        model.title='Library / System Audit Trail'; model.subtitle='Recorded QLog actions including library and equipment activity'; model.filename='QLOG_Audit_Trail_Report.xlsx'; model.sheetName='Audit Trail'; model.filterLabel='Action';
+        model.columns=[{key:'no',label:'No.',width:7,align:'center'},{key:'timestamp',label:'Timestamp',width:22},{key:'personnel',label:'Personnel',width:25},{key:'action',label:'Action',width:26},{key:'details',label:'Details',width:60}];
+        model.rows=auditLogs.map(function(a){return {timestamp:a.timestamp||'',personnel:a.librarian||'',action:a.action||'',details:a.details||'',_filter:a.action||'',_date:_reportDateMs(a.timestamp)};});
+    } else if(type==='EQUIPMENT_INVENTORY'){
+        model.title='Equipment COA ICS Registry Report'; model.subtitle='ICS-aligned semi-expendable equipment registry across authorized school units'; model.filename='QLOG_ICS_Equipment_Registry_Report.xlsx'; model.sheetName='Equipment ICS'; model.filterLabel='COA Category';
+        model.columns=[{key:'no',label:'No.',width:7,align:'center'},{key:'inventoryNo',label:'Inventory Item No.',width:20},{key:'description',label:'Description',width:34},{key:'category',label:'COA Category',width:34},{key:'qty',label:'Qty',width:8,type:'number',align:'center'},{key:'unit',label:'Unit',width:10,align:'center'},{key:'unitCost',label:'Unit Cost',width:14,type:'money'},{key:'totalCost',label:'Total Cost',width:15,type:'money'},{key:'usefulLife',label:'Useful Life',width:13,align:'center'},{key:'icsNo',label:'ICS No.',width:18},{key:'assignedUnit',label:'Assigned Unit',width:24},{key:'condition',label:'Condition',width:16},{key:'status',label:'Status',width:14,align:'center'},{key:'dateAcquired',label:'Date Acquired',width:14,align:'center'}];
+        model.rows=equipment.map(function(e){return {inventoryNo:e.id||'',description:e.name||'',category:e.category||'',qty:Number(e.quantity)||1,unit:e.measureUnit||'unit',unitCost:_reportMoney(e.unitCost),totalCost:(e.totalCost!==undefined?_reportMoney(e.totalCost):((Number(e.quantity)||1)*_reportMoney(e.unitCost))),usefulLife:e.estimatedUsefulLife||'',icsNo:e.icsNo||'',assignedUnit:e.unit||'',condition:e.condition||'',status:e.status||'',dateAcquired:e.dateAcquired||'',_filter:e.category||'',_date:_reportDateMs(e.dateAcquired)||_reportDateMs(e.addedAt)};});
+    } else if(type==='EQUIPMENT_BORROW'){
+        model.title='Equipment Borrowing & Returns Report'; model.subtitle='Equipment release, expected return, actual return and condition history'; model.filename='QLOG_Equipment_Borrow_Return_Logs.xlsx'; model.sheetName='Equipment Logs'; model.filterLabel='Transaction Status';
+        model.columns=[{key:'no',label:'No.',width:7,align:'center'},{key:'ref',label:'Reference',width:18},{key:'equipment',label:'Equipment',width:28},{key:'equipmentId',label:'Equipment ID',width:18},{key:'assignedUnit',label:'Assigned Unit',width:23},{key:'borrower',label:'Borrower',width:26},{key:'borrowerId',label:'Borrower ID',width:18},{key:'status',label:'Status',width:13,align:'center'},{key:'borrowed',label:'Borrowed',width:20},{key:'expected',label:'Expected Return',width:20},{key:'returned',label:'Actual Return',width:20},{key:'overdue',label:'Overdue Days',width:12,type:'number',align:'center'},{key:'conditionOut',label:'Condition Out',width:16},{key:'conditionIn',label:'Condition In',width:16},{key:'remarks',label:'Remarks',width:32}];
+        model.rows=equipLogs.map(function(l){return {ref:l.ref||'',equipment:l.eqName||'',equipmentId:l.eqId||'',assignedUnit:l.unit||'',borrower:l.borrowerName||'',borrowerId:l.borrowerId||'',status:l.s||'',borrowed:l.borrowedAt||'',expected:l.expectedAt||'',returned:l.returnedAt||'',overdue:Number(l.overdueDays)||0,conditionOut:l.conditionOut||'',conditionIn:l.conditionIn||'',remarks:l.remarks||'',_filter:l.s||'',_date:_reportDateMs(l.borrowedMs)||_reportDateMs(l.borrowedAt)};});
+    } else {
+        model.type='ATTENDANCE'; model.title='Dashboard / Attendance Logbook Report'; model.subtitle='Daily QLog time-in/time-out records for students, personnel and visitors'; model.filename='QLOG_Attendance_Logbook_Report.xlsx'; model.sheetName='Attendance Logs'; model.filterLabel='Client Category';
+        model.columns=[{key:'no',label:'No.',width:7,align:'center'},{key:'id',label:'ID',width:18},{key:'name',label:'Name',width:28},{key:'gradeSection',label:'Grade & Section',width:18},{key:'timeIn',label:'Time In',width:15,align:'center'},{key:'timeOut',label:'Time Out',width:15,align:'center'},{key:'category',label:'Category',width:20},{key:'reason',label:'Reason',width:30},{key:'date',label:'Date',width:14,align:'center'}];
+        model.rows=logs.map(function(l){return {id:l.id||'',name:l.name||'',gradeSection:l.gs||'',timeIn:l.timein||'',timeOut:l.timeout||'',category:l.category||'',reason:l.reason||'',date:l.date||'',_filter:l.category||'',_date:_reportDateMs(l.date)};});
+    }
+    return model;
+}
+function updateReportControls(){
+    var type=(document.getElementById('reportType')||{}).value||'ATTENDANCE';
+    var model=_reportModel(type), sel=document.getElementById('reportCategory'), label=document.getElementById('reportFilterLabel');
+    var prior=sel?sel.value:'ALL';
+    if(label) label.textContent=model.filterLabel||'Filter';
+    if(sel){
+        var values=_reportUnique(model.rows,'_filter');
+        sel.innerHTML='<option value="ALL">All</option>'+values.map(function(v){return '<option value="'+_reportEsc(v)+'">'+_reportEsc(v)+'</option>';}).join('');
+        var valid=Array.prototype.some.call(sel.options,function(o){return o.value===prior;}); sel.value=valid?prior:'ALL';
+    }
+    var from=document.getElementById('reportDateFrom'), to=document.getElementById('reportDateTo');
+    if(from){from.disabled=!model.dateFilter;if(!model.dateFilter)from.value='';}
+    if(to){to.disabled=!model.dateFilter;if(!model.dateFilter)to.value='';}
+    var note=document.getElementById('reportContextNote');
+    if(note) note.innerHTML='<b>'+_reportEsc(model.title)+'</b> — '+_reportEsc(model.subtitle)+(model.dateFilter?' Date range filters use the primary transaction/acquisition date for this report.':' This inventory report has no transaction-date filter.');
+    _reportLastType=type;
+}
+function _reportSummary(model,rows){
+    var type=model.type;
+    if(type==='LIBRARY_INVENTORY') return [{label:'Titles',value:rows.length},{label:'Copies',value:rows.reduce(function(s,r){return s+(Number(r.qty)||0);},0)},{label:'Acquisition Value',value:'₱'+rows.reduce(function(s,r){return s+(Number(r.totalCost)||0);},0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})},{label:'ICS Complete',value:rows.filter(function(r){return r.icsStatus==='COMPLETE';}).length}];
+    if(type==='LIBRARY_BORROW') return [{label:'Transactions',value:rows.length},{label:'Active',value:rows.filter(function(r){return r.status==='BORROWED';}).length},{label:'Overdue',value:rows.filter(function(r){return r.status==='OVERDUE';}).length},{label:'Returned',value:rows.filter(function(r){return r.status==='RETURNED';}).length}];
+    if(type==='LIBRARY_RESERVATION') return [{label:'Queue Entries',value:rows.length},{label:'Reserved Copies',value:rows.reduce(function(s,r){return s+(Number(r.qty)||0);},0)},{label:'Subjects',value:(new Set(rows.map(function(r){return r.subject;}).filter(Boolean))).size},{label:'Borrowers',value:(new Set(rows.map(function(r){return r.borrowerId;}).filter(Boolean))).size}];
+    if(type==='LIBRARY_AUDIT') return [{label:'Audit Entries',value:rows.length},{label:'Actions',value:(new Set(rows.map(function(r){return r.action;}).filter(Boolean))).size},{label:'Personnel',value:(new Set(rows.map(function(r){return r.personnel;}).filter(Boolean))).size},{label:'Filtered',value:rows.length}];
+    if(type==='EQUIPMENT_INVENTORY') return [{label:'Registry Lines',value:rows.length},{label:'Total Quantity',value:rows.reduce(function(s,r){return s+(Number(r.qty)||0);},0)},{label:'Acquisition Value',value:'₱'+rows.reduce(function(s,r){return s+(Number(r.totalCost)||0);},0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})},{label:'Available',value:rows.filter(function(r){return r.status==='AVAILABLE';}).length}];
+    if(type==='EQUIPMENT_BORROW') return [{label:'Transactions',value:rows.length},{label:'Active',value:rows.filter(function(r){return r.status==='BORROWED';}).length},{label:'Overdue',value:rows.filter(function(r){return r.status==='OVERDUE';}).length},{label:'Returned',value:rows.filter(function(r){return r.status==='RETURNED';}).length}];
+    if(type==='CLIENT') return [{label:'Registered',value:rows.length},{label:'Students',value:rows.filter(function(r){return r.category==='STUDENT';}).length},{label:'Personnel',value:rows.filter(function(r){return r.category!=='STUDENT';}).length},{label:'Categories',value:(new Set(rows.map(function(r){return r.category;}).filter(Boolean))).size}];
+    if(type==='VISITOR') return [{label:'Visitor Logs',value:rows.length},{label:'Inside',value:rows.filter(function(r){return !r.timeOut;}).length},{label:'With Time-Out',value:rows.filter(function(r){return !!r.timeOut;}).length},{label:'Reasons',value:(new Set(rows.map(function(r){return r.reason;}).filter(Boolean))).size}];
+    return [{label:'Log Entries',value:rows.length},{label:'Currently Inside',value:rows.filter(function(r){return !r.timeOut;}).length},{label:'Visitors',value:rows.filter(function(r){return String(r.category).toUpperCase()==='VISITOR';}).length},{label:'Categories',value:(new Set(rows.map(function(r){return r.category;}).filter(Boolean))).size}];
+}
 function renderReports(){
-    var rows = logs.slice().reverse();
-    var f = document.getElementById('reportDate');
-    if(f && f.value){
-        var parts = f.value.split('-');
-        var target = parseInt(parts[1], 10) + '/' + parseInt(parts[2], 10) + '/' + parts[0];
-        rows = rows.filter(function(r){ return r.date === target; });
+    var type=(document.getElementById('reportType')||{}).value||'ATTENDANCE';
+    if(_reportLastType!==type) updateReportControls();
+    var model=_reportModel(type), rows=model.rows.slice();
+    if(model.dateFilter) rows=rows.filter(function(r){return _reportDatePass(r._date);});
+    var filter=(document.getElementById('reportCategory')||{}).value||'ALL';
+    if(filter!=='ALL') rows=rows.filter(function(r){return String(r._filter||'')===filter;});
+    var search=((document.getElementById('reportSearch')||{}).value||'').trim().toLowerCase();
+    if(search) rows=rows.filter(function(r){return Object.keys(r).some(function(k){return k.charAt(0)!=='_' && String(r[k]===undefined?'':r[k]).toLowerCase().indexOf(search)!==-1;});});
+    rows=rows.slice().reverse().map(function(r,i){var c={};Object.keys(r).forEach(function(k){c[k]=r[k];});c.no=i+1;return c;});
+    model.rows=rows; model.summary=_reportSummary(model,rows); _currentReportModel=model;
+    var head=document.getElementById('reportHead'); if(head) head.innerHTML=model.columns.map(function(c){return '<th>'+_reportEsc(c.label)+'</th>';}).join('');
+    var body=document.getElementById('reportTbl');
+    if(body){
+        if(!rows.length) body.innerHTML='<tr><td colspan="'+model.columns.length+'" style="padding:24px;text-align:center;color:#64748b;">No records found for the selected report/filter.</td></tr>';
+        else body.innerHTML=rows.map(function(r){return '<tr>'+model.columns.map(function(c){var v=r[c.key];if(c.type==='money')v='₱'+(Number(v)||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});return '<td style="'+(c.align==='center'?'text-align:center;':(c.align==='right'||c.type==='money'||c.type==='number'?'text-align:right;':''))+'">'+_reportEsc(v)+'</td>';}).join('')+'</tr>';}).join('');
     }
-    var cat = document.getElementById('reportCategory');
-    if(cat && cat.value !== 'ALL'){ rows = rows.filter(function(r){ return (r.category||'').toUpperCase() === cat.value.toUpperCase(); }); }
-    var html = '';
-    for(var i=0; i<rows.length; i++) {
-        var l = rows[i];
-        html += '<tr><td>' + (i+1) + '</td><td>' + l.name + '</td><td>' + (l.gs||'') + '</td><td>' + l.timein + '</td><td>' + (l.timeout||'') + '</td><td>' + l.category + '</td><td>' + (l.reason||'') + '</td><td>' + (l.date||'') + '</td></tr>';
-    }
-    document.getElementById('reportTbl').innerHTML = html;
+    var sum=document.getElementById('reportSummary'); if(sum) sum.innerHTML=model.summary.map(function(x){return '<div class="report-summary-card"><div class="k">'+_reportEsc(x.label)+'</div><div class="v">'+_reportEsc(x.value)+'</div></div>';}).join('');
+    var t=document.getElementById('reportTitlePreview'); if(t)t.textContent=model.title;
+    var st=document.getElementById('reportSubtitlePreview'); if(st)st.textContent=model.subtitle;
+    var ori='portrait'; if(typeof QLogExport!=='undefined'&&QLogExport.autoOrientation) ori=QLogExport.autoOrientation(model.columns,'auto');
+    var badge=document.getElementById('reportOrientationBadge'); if(badge)badge.textContent='A4 '+ori.toUpperCase();
+}
+function clearReportFilters(){
+    var f=document.getElementById('reportDateFrom'),t=document.getElementById('reportDateTo'),c=document.getElementById('reportCategory'),q=document.getElementById('reportSearch');
+    if(f)f.value='';if(t)t.value='';if(c)c.value='ALL';if(q)q.value='';renderReports();
 }
 
 function resetDatabase(){
     if(!confirm('Delete ALL records in every tab? This cannot be undone.')) return;
-    var keys = ['people','logs','books','borrowLogs', 'configData', 'dynamicFilterData', 'borrowPolicies', 'reservations', 'auditLogs', 'savedSession'];
+    var keys = ['people','logs','books','borrowLogs','equipment','equipLogs','configData','dynamicFilterData','borrowPolicies','reservations','auditLogs','savedSession'];
     for(var i=0; i<keys.length; i++) { localStorage.removeItem(keys[i]); }
-    people = []; logs = []; books = []; borrowLogs = []; reservations = []; auditLogs = [];
+    people = []; logs = []; books = []; borrowLogs = []; reservations = []; auditLogs = []; if(typeof equipment!=='undefined') equipment=[]; if(typeof equipLogs!=='undefined') equipLogs=[];
     renderPeople(); renderLogs();
     if(typeof renderBorrow === 'function') renderBorrow();
     toast('All data completely deleted.','green');
     setTimeout(function() { window.location.reload(); }, 1500);
 }
 
+
 function printReport(){
-    var d = document.getElementById('reportDate'); var pDate = document.getElementById('printDate');
-    if(pDate) pDate.textContent = (d && d.value) ? d.value : new Date().toLocaleDateString();
-    var w = window.open('','','width=1000,height=800');
-    var sigHtml = getSignatureBlock();
-    w.document.write('<html><head><title>Saved Log Report</title><style>body{font-family:"Segoe UI", Arial, sans-serif;padding:25px;} h2,h3,h4{text-align:center;margin:4px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #cbd5e1;padding:10px;text-align:center;font-size:14px;} th{background:#f1f5f9; color:#0f172a;}</style></head><body>' + document.getElementById('printArea').innerHTML + sigHtml + '</body></html>');
-    w.document.close(); w.focus(); setTimeout(function(){ w.print(); w.close(); }, 300);
-}
-
-function exportLogs(){
-    var data = logs.slice().reverse().map(function(l, i){ return {No: i+1, ID: l.id, Name: l.name, Category: l.category, Grade_Section: l.gs, Time_In: l.timein, Time_Out: l.timeout, Reason: l.reason||'', Date: l.date, Identity_Verification: l.identityVerification || (l.category === 'VISITOR' ? (l.identityVerificationMethod === 'MANUAL_NO_ID' ? 'MANUAL ENTRY \u2014 NO ID PRESENTED' : (l.idVerified ? 'VALID ID / OCR' : '')) : ''), ID_Verified: l.category === 'VISITOR' ? (l.idVerified === true ? 'YES' : 'NO') : ''}; });
-    if(typeof XLSX !== 'undefined') { 
-        var ws = XLSX.utils.json_to_sheet(data); 
-        addSignatureToExcel(ws);
-        var wb = XLSX.utils.book_new(); 
-        XLSX.utils.book_append_sheet(wb, ws, "All Logs"); 
-        XLSX.writeFile(wb, "QLOG_ALL_TIME_LOGS.xlsx"); 
+    renderReports();
+    var m=_currentReportModel;
+    if(!m){alert('No report is currently selected.');return;}
+    if(typeof QLogExport!=='undefined'&&QLogExport.printTable){
+        QLogExport.printTable({title:m.title,subtitle:m.subtitle,columns:m.columns,rows:m.rows,orientation:'auto',summary:m.summary});
+        return;
     }
+    alert('Premium print helper is unavailable.');
 }
 
-function exportAuditTrail() {
+async function exportLogs(){
+    renderReports();
+    var m=_currentReportModel;
+    if(!m){alert('No report is currently selected.');return;}
+    if(typeof QLogExport!=='undefined'&&QLogExport.downloadTableXlsx){
+        try{await QLogExport.downloadTableXlsx({title:m.title,subtitle:m.subtitle,columns:m.columns,rows:m.rows,orientation:'auto',sheetName:m.sheetName,filename:m.filename});toast('📥 Formatted A4-ready Excel report downloaded.','green');}
+        catch(err){console.error('[report-export]',err);toast('❌ Could not generate the formatted Excel report: '+(err.message||err),'red');}
+        return;
+    }
+    alert('Premium Excel helper is unavailable.');
+}
+
+async function exportAuditTrail() {
     if(auditLogs.length === 0) { alert('No audit trail records found.'); return; }
-    if(typeof XLSX !== 'undefined') {
-        var ws = XLSX.utils.json_to_sheet(auditLogs);
-        addSignatureToExcel(ws);
-        var wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Audit Trail");
-        XLSX.writeFile(wb, "QLog_Librarian_Audit_Trail.xlsx");
+    var rows=auditLogs.slice().reverse().map(function(a,i){return {no:i+1,timestamp:a.timestamp||'',personnel:a.librarian||'',action:a.action||'',details:a.details||''};});
+    if(typeof QLogExport!=='undefined'&&QLogExport.downloadTableXlsx){
+        try{await QLogExport.downloadTableXlsx({title:'Library / System Audit Trail',subtitle:'Chronological record of QLog actions and accountability events',filename:'QLOG_Librarian_Audit_Trail.xlsx',sheetName:'Audit Trail',orientation:'landscape',rows:rows,columns:[{key:'no',label:'No.',width:7,align:'center'},{key:'timestamp',label:'Timestamp',width:22},{key:'personnel',label:'Personnel',width:24},{key:'action',label:'Action',width:28},{key:'details',label:'Details',width:65}]});toast('📥 Formatted audit trail downloaded.','green');}catch(err){toast('❌ Audit export failed: '+(err.message||err),'red');}
+        return;
     }
 }
 
 function exportVisitorPDF(){
     try{
-        var visitors = logs.filter(function(v){ return (v.category||'').toUpperCase() === 'VISITOR'; });
-        if(visitors.length === 0){ alert('No visitor records found.'); return; }
-        var sigHtml = getSignatureBlock();
-        var html = '<div style="font-family:Arial;padding:15px;"><h2 style="text-align:center;">Visitor Records Report</h2>';
-        visitors.forEach(function(v, i){ html += '<div style="border:1px solid #000;padding:12px;margin-bottom:15px;page-break-inside:avoid;"><h3>Visitor #' + (i+1) + '</h3><p><b>Name:</b> ' + (v.name||'') + '</p><p><b>Date:</b> ' + (v.date||'') + '</p><p><b>Time In:</b> ' + (v.timein||'') + '</p><p><b>Time Out:</b> ' + (v.timeout||'') + '</p><p><b>Reason:</b> ' + (v.reason||'') + '</p><p><b>Identity Verification:</b> ' + (v.identityVerification || (v.identityVerificationMethod === 'MANUAL_NO_ID' ? 'MANUAL ENTRY \u2014 NO ID PRESENTED' : (v.idVerified ? 'VALID ID / OCR' : 'NOT RECORDED'))) + '</p><p><b>ID Verified:</b> ' + (v.idVerified === true ? 'YES' : 'NO') + '</p><div><b>Captured Face:</b><br>' + (v.face ? '<img src="' + v.face + '" style="width:200px;border:1px solid #000;">' : 'No photo available') + '</div></div>'; });
-        html += sigHtml + '</div>';
-        var container = document.createElement('div'); container.innerHTML = html;
-        if(typeof html2pdf !== 'undefined') { html2pdf().from(container).set({ margin: 10, filename: 'Visitor_Records_Report.pdf', image: {type: 'jpeg', quality: 0.95}, html2canvas: {scale: 2, useCORS: true}, jsPDF: {unit: 'mm', format: 'a4', orientation: 'portrait'} }).save(); }
-    } catch(err) {}
+        var visitors=logs.filter(function(v){return String(v.category||'').toUpperCase()==='VISITOR';}).slice().reverse();
+        if(!visitors.length){alert('No visitor records found.');return;}
+        var meta=(typeof QLogExport!=='undefined'&&QLogExport.sessionMeta)?QLogExport.sessionMeta():{facility:'',preparedBy:currentSession.inCharge||'',designation:currentSession.designation||'',branding:{}};
+        var br=meta.branding||((window.getQlogBranding&&getQlogBranding())||{});
+        var cards=visitors.map(function(v,i){
+            var verification=v.identityVerification||(v.identityVerificationMethod==='MANUAL_NO_ID'?'MANUAL ENTRY — NO ID PRESENTED':(v.idVerified?'VALID ID / OCR':'NOT RECORDED'));
+            return '<div class="vcard"><div class="vnum">Visitor #'+(i+1)+'</div><div class="vgrid"><div><b>Name</b><span>'+_reportEsc(v.name||'')+'</span></div><div><b>Date</b><span>'+_reportEsc(v.date||'')+'</span></div><div><b>Time In / Out</b><span>'+_reportEsc(v.timein||'')+' / '+_reportEsc(v.timeout||'--')+'</span></div><div><b>ID Verification</b><span>'+_reportEsc(verification)+'</span></div><div class="wide"><b>Reason for Visit</b><span>'+_reportEsc(v.reason||'')+'</span></div></div>'+(v.face?'<div class="face"><img src="'+v.face+'" alt="Visitor face"><small>Captured verification face</small></div>':'')+'</div>';
+        }).join('');
+        var html='<div class="header"><div style="display:flex;align-items:center;gap:8px">'+(br.logo?'<img src="'+_reportEsc(br.logo)+'" style="width:42px;height:42px;object-fit:contain">':'')+'<div><div class="brand">'+_reportEsc(br.schoolName||'QLog Pro')+'</div><div style="font-size:9px;color:#64748b">'+_reportEsc([br.address,br.schoolYear?('SY '+br.schoolYear):''].filter(Boolean).join(' • '))+'</div></div></div><div><b>QLog Pro</b><br>Official Visitor Records Report</div></div><h2>Visitor Logs Report</h2><div class="meta"><b>Facility/Unit:</b> '+_reportEsc(meta.facility||'All / Not specified')+' &nbsp; • &nbsp; <b>Prepared by:</b> '+_reportEsc(meta.preparedBy||'Designated Personnel')+' &nbsp; • &nbsp; <b>Generated:</b> '+_reportEsc(new Date().toLocaleString())+'</div>'+cards+'<div class="sig"><b>'+_reportEsc(String(meta.preparedBy||'Designated Personnel').toUpperCase())+'</b><br>'+_reportEsc(meta.designation||'Facility In-Charge')+'</div><div style="text-align:center;font:8px Arial;color:#64748b;margin-top:14px">QLog Pro • Powered by: Magallanes NHS Team Bitaug C.I. Projects</div>';
+        var container=document.createElement('div');container.innerHTML=html;
+        if(typeof html2pdf!=='undefined'){
+            var st=document.createElement('style');st.textContent='@page{size:A4 portrait;margin:10mm}.header{border-bottom:3px solid #1d4ed8;padding:8px 0;margin-bottom:10px;display:flex;justify-content:space-between;color:#334155;font:11px Arial}.header .brand{font-size:18px;font-weight:800;color:#0f172a}h2{text-align:center;color:#1e3a8a;font:700 18px Arial}.meta{font:10px Arial;background:#f8fafc;border:1px solid #cbd5e1;padding:8px;margin:10px 0}.vcard{position:relative;border:1px solid #cbd5e1;border-left:4px solid #1d4ed8;border-radius:7px;padding:10px;margin:0 0 10px;page-break-inside:avoid;font:10px Arial}.vnum{font-weight:800;color:#1e3a8a;margin-bottom:7px}.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.vgrid div{display:flex;flex-direction:column}.vgrid .wide{grid-column:1/-1}.vgrid b{font-size:8px;color:#64748b;text-transform:uppercase}.vgrid span{margin-top:2px}.face{float:right;margin-left:8px;text-align:center}.face img{width:78px;height:58px;object-fit:cover;border:1px solid #94a3b8;border-radius:4px}.face small{display:block;font-size:7px;color:#64748b}.sig{width:250px;margin:35px 0 0 auto;border-top:1px solid #334155;text-align:center;padding-top:5px;font:10px Arial}';container.prepend(st);
+            html2pdf().from(container).set({margin:[10,9,12,9],filename:'QLOG_Visitor_Records_Report.pdf',image:{type:'jpeg',quality:0.96},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).save();
+        }
+    }catch(err){console.error('[visitor-pdf]',err);toast('❌ Visitor PDF generation failed.','red');}
 }
 
 async function _qrDataURL(text, size){
@@ -5324,88 +5567,186 @@ async function _qrDataURL(text, size){
 
 async function exportClientInventoryHTML(){
     if(typeof QRCode === 'undefined'){ alert('Local QR library not loaded.'); return; }
-    var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Client Inventory QR</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:20px} table{border-collapse:collapse;width:100%} th,td{border:1px solid #000;padding:12px;text-align:center} th{background:#f1f5f9} .qr{width:90px;height:90px;margin:auto;margin-bottom:8px;}</style></head><body><h2 style="text-align:center;">Client Inventory with QR Codes</h2><table><tr><th>No</th><th>Complete Name</th><th>QR Code</th></tr>';
-    for(var i=0; i<people.length; i++) {
-        var p = people[i];
-        var dataUrl = await _qrDataURL(p.id, 80);
-        html += '<tr><td>' + (i+1) + '</td><td><strong>' + p.name + '</strong><br><span style="color:#64748b;font-size:12px;">' + p.category + '</span></td><td><img class="qr" alt="QR" src="' + dataUrl + '"><div style="font-size:11px;">' + p.id + '</div></td></tr>';
+    var meta=(typeof QLogExport!=='undefined'&&QLogExport.sessionMeta)?QLogExport.sessionMeta():{facility:currentSession.facility||'',preparedBy:currentSession.inCharge||'',designation:currentSession.designation||'',branding:{}};
+    var br=meta.branding||((window.getQlogBranding&&getQlogBranding())||{});
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>QLog Client Inventory QR</title><style>@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:18px;color:#0f172a}.head{border-bottom:3px solid #1d4ed8;padding-bottom:8px;margin-bottom:10px}.brand{font-size:20px;font-weight:800}.title{text-align:center;color:#1e3a8a;font-size:17px;font-weight:800;margin:8px}.meta{background:#f8fafc;border:1px solid #cbd5e1;padding:8px;font-size:10px;margin-bottom:10px}table{border-collapse:collapse;width:100%}thead{display:table-header-group}tr{page-break-inside:avoid}th{background:#1e3a8a;color:#fff;border:1px solid #1e40af;padding:7px}td{border:1px solid #cbd5e1;padding:8px;text-align:center}tbody tr:nth-child(even) td{background:#f8fafc}.qr{width:76px;height:76px;margin:auto;margin-bottom:5px}.sig{width:250px;margin:35px 0 0 auto;border-top:1px solid #334155;text-align:center;padding-top:5px;font-size:10px}@media screen{body{max-width:800px;margin:auto}}@media print{body{padding:0}}</style></head><body><div class="head"><div style="display:flex;align-items:center;gap:8px">'+(br.logo?'<img src="'+_reportEsc(br.logo)+'" style="width:42px;height:42px;object-fit:contain">':'')+'<div><div class="brand">'+_reportEsc(br.schoolName||'QLog Pro')+'</div><div style="font-size:9px;color:#64748b">'+_reportEsc([br.address,br.schoolYear?('SY '+br.schoolYear):''].filter(Boolean).join(' • '))+'</div><div style="font-size:9px;font-weight:700;margin-top:3px">QLog Pro</div></div></div></div><div class="title">Client Inventory with QR Codes</div><div class="meta"><b>Facility/Unit:</b> '+_reportEsc(meta.facility||'All / Not specified')+' &nbsp; • &nbsp; <b>Generated:</b> '+_reportEsc(new Date().toLocaleString())+'</div><table><thead><tr><th>No.</th><th>ID</th><th>Complete Name / Category</th><th>QR Code</th></tr></thead><tbody>';
+    for(var i=0;i<people.length;i++){
+        var p=people[i],dataUrl=await _qrDataURL(p.id,100);
+        html+='<tr><td>'+(i+1)+'</td><td>'+_reportEsc(p.id||'')+'</td><td><strong>'+_reportEsc(p.name||'')+'</strong><br><span style="color:#64748b;font-size:10px">'+_reportEsc(p.category||'')+(p.grade||p.section?' • '+_reportEsc([p.grade,p.section].filter(Boolean).join(' ')):'')+'</span></td><td><img class="qr" alt="QR" src="'+dataUrl+'"><div style="font-size:9px">'+_reportEsc(p.id||'')+'</div></td></tr>';
     }
-    html += '</table></body></html>';
-    var blob = new Blob([html], {type: 'text/html'}); var url = URL.createObjectURL(blob); var a = document.createElement('a');
-    a.href = url; a.download = 'QLOG_Client_Inventory_QR.html'; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    html+='</tbody></table><div class="sig"><b>'+_reportEsc(String(meta.preparedBy||'Designated Personnel').toUpperCase())+'</b><br>'+_reportEsc(meta.designation||'Facility In-Charge')+'</div><div style="text-align:center;font-size:8px;color:#64748b;margin-top:14px">QLog Pro • Powered by: Magallanes NHS Team Bitaug C.I. Projects</div></body></html>';
+    var blob=new Blob([html],{type:'text/html'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='QLOG_Client_Inventory_QR_A4.html';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1200);
 }
 
+var LIB_COA_ACCOUNT_CODE = '10406020';
+var LIB_COA_CATEGORY = 'Semi-Expendable Books';
+var LIB_ASSIGNED_UNIT = 'School Library';
+var LIB_SUBJECTS = ['English','Filipino','Mathematics','Science','Araling Panlipunan','GMRC / Values Education','MAPEH','Music','Arts','Physical Education','Health','EPP / TLE','ICT / Computer','Reading','Mother Tongue','Research','General Reference','Dictionary / Encyclopedia','Literature','Teacher Resource','Other'];
+var LIB_YEAR_LEVELS = ['Kindergarten','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12','Multi-Grade','General Reference','Teacher Resource'];
+var editingBookId = '';
+
+function _libEsc(v){ return String(v===undefined||v===null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function _libMoney(v){ var n=Number(v||0); return isFinite(n)?n:0; }
+function _libInt(v,f){ var n=parseInt(v,10); return isFinite(n)&&n>0?n:(f||0); }
+function _libDateOnly(v){ if(!v)return ''; if(v instanceof Date&&!isNaN(v.getTime()))return v.toISOString().slice(0,10); var d=new Date(String(v).trim()); return !isNaN(d.getTime())?d.toISOString().slice(0,10):String(v).trim(); }
+function _libPick(row,keys){ for(var k in row){ if(!Object.prototype.hasOwnProperty.call(row,k))continue; var n=String(k).replace(/[^a-z0-9]/gi,'').toLowerCase(); if(keys.indexOf(n)!==-1){ var v=row[k]; return v===undefined||v===null?'':String(v).trim(); } } return ''; }
+function _libBookTotal(b){ return Math.round((_libInt(b.copies,0)*_libMoney(b.unitCost))*100)/100; }
+function _libCounts(isbn){ var bc=0,lost=0,dmg=0; borrowLogs.forEach(function(x){ if(String(x.b).trim()!==String(isbn||'').trim())return; var q=Number(x.qty)||1; if(x.s==='BORROWED'||x.s==='OVERDUE')bc+=q; else if(x.s==='LOST')lost+=q; else if(x.s==='DAMAGED')dmg+=q; }); return {borrowed:bc,lost:lost,damaged:dmg,out:bc+lost+dmg}; }
+function _libValidate(rec){
+    if(!rec.id) return 'Inventory Item No. is required.';
+    if(!rec.isbn) return 'ISBN is required because QLog borrowing history uses it as the stable book transaction key.';
+    if(!rec.title) return 'Book Title is required.';
+    if(!rec.subject) return 'Subject is required.';
+    if(!rec.yearLevel) return 'Year Level is required.';
+    if(!rec.copies||rec.copies<1) return 'Quantity / Copies must be at least 1.';
+    if(!(rec.unitCost>0)) return 'Unit Cost must be greater than zero.';
+    if(rec.unitCost>=COA_PPE_CAPITALIZATION_THRESHOLD) return 'Unit Cost is ₱50,000 or above; review classification under the current COA capitalization policy instead of treating this as a semi-expendable book.';
+    if(!rec.estimatedUsefulLife||rec.estimatedUsefulLife<2) return 'Estimated Useful Life must be more than one year for an ICS semi-expendable item.';
+    return '';
+}
+function _libMigrateBooks(){
+    var changed=false;
+    books.forEach(function(b){
+        if(!b.coaAccountCode){b.coaAccountCode=LIB_COA_ACCOUNT_CODE;changed=true;}
+        if(!b.coaCategory){b.coaCategory=LIB_COA_CATEGORY;changed=true;}
+        if(!b.assignedUnit){b.assignedUnit=LIB_ASSIGNED_UNIT;changed=true;}
+        if(!b.measureUnit){b.measureUnit='copy';changed=true;}
+        if(!b.subject&&b.category){b.subject=b.category;changed=true;}
+        if(!b.category&&b.subject){b.category=b.subject;changed=true;}
+        if(b.icsAligned===undefined){ b.icsAligned=!!(b.unitCost>0&&b.estimatedUsefulLife>=2&&b.subject&&b.yearLevel); changed=true; }
+        if(b.totalCost===undefined){b.totalCost=_libBookTotal(b);changed=true;}
+    });
+    if(changed)localStorage.setItem('books',JSON.stringify(books));
+}
+function _libPopulateSelectors(){
+    populateDatalist('bookSubjectList',LIB_SUBJECTS); populateDatalist('bookYearLevelList',LIB_YEAR_LEVELS);
+    var sf=document.getElementById('bookSubjectFilter'), yf=document.getElementById('bookYearFilter');
+    if(sf){ var cur=sf.value||'ALL'; var subjects=LIB_SUBJECTS.slice(); books.forEach(function(b){var x=String(b.subject||b.category||'').trim();if(x&&subjects.indexOf(x)===-1)subjects.push(x);}); sf.innerHTML='<option value="ALL">All Subjects</option>'+subjects.map(function(x){return '<option value="'+_libEsc(x)+'">'+_libEsc(x)+'</option>';}).join(''); if([].slice.call(sf.options).some(function(o){return o.value===cur;}))sf.value=cur; }
+    if(yf){ var curY=yf.value||'ALL'; var years=LIB_YEAR_LEVELS.slice(); books.forEach(function(b){var x=String(b.yearLevel||'').trim();if(x&&years.indexOf(x)===-1)years.push(x);}); yf.innerHTML='<option value="ALL">All Year Levels</option>'+years.map(function(x){return '<option value="'+_libEsc(x)+'">'+_libEsc(x)+'</option>';}).join(''); if([].slice.call(yf.options).some(function(o){return o.value===curY;}))yf.value=curY; }
+}
+function _libResetForm(){
+    ['newBookId','newISBN','newTitle','newAuthor','newSubject','newYearLevel','newCopies','newBookUnitCost','newBookUsefulLife','newBookIcsNo','newBookFundCluster','newBookDateAcquired'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    var u=document.getElementById('newBookAssignedUnit');if(u)u.value=LIB_ASSIGNED_UNIT;
+    editingBookId=''; var save=document.getElementById('bookSaveBtn');if(save)save.textContent='+ Save ICS Book'; var cancel=document.getElementById('bookCancelEditBtn');if(cancel)cancel.style.display='none';
+}
+function cancelBookEdit(){ _libResetForm(); toast('Book edit cancelled.','blue'); }
+function editBook(id){
+    var b=books.find(function(x){return String(x.id)===String(id);}); if(!b)return;
+    editingBookId=String(b.id);
+    var vals={newBookId:b.id||'',newISBN:b.isbn||'',newTitle:b.title||'',newAuthor:b.author||'',newSubject:b.subject||b.category||'',newYearLevel:b.yearLevel||'',newCopies:b.copies||1,newBookUnitCost:b.unitCost||'',newBookUsefulLife:b.estimatedUsefulLife||'',newBookIcsNo:b.icsNo||'',newBookFundCluster:b.fundCluster||'',newBookDateAcquired:b.dateAcquired||'',newBookAssignedUnit:LIB_ASSIGNED_UNIT};
+    Object.keys(vals).forEach(function(id2){var e=document.getElementById(id2);if(e)e.value=vals[id2];});
+    var save=document.getElementById('bookSaveBtn');if(save)save.textContent='💾 Update ICS Book'; var cancel=document.getElementById('bookCancelEditBtn');if(cancel)cancel.style.display='inline-block';
+    var card=document.getElementById('newBookId');if(card&&card.scrollIntoView)card.scrollIntoView({behavior:'smooth',block:'center'});
+    toast('✏️ Loaded '+(b.title||b.isbn)+' for ICS completion/edit.','yellow');
+}
 function addBook(){
-    var newISBN = document.getElementById('newISBN'); var newTitle = document.getElementById('newTitle');
-    var newAuthor = document.getElementById('newAuthor'); var newCategory = document.getElementById('newCategory');
-    var newCopies = document.getElementById('newCopies');
-    var isbn = newISBN.value.trim(); var id = isbn;
-    if(!id || !isbn){ alert('Book ID and ISBN are required'); return; }
-    var exArray = books.filter(function(b){ return String(b.isbn).trim() === isbn; });
-    if(exArray.length > 0){ alert('ISBN already exists.'); return; }
-    
-    books.push({ id: id, isbn: isbn, title: newTitle.value.trim(), author: newAuthor.value.trim(), category: newCategory.value.trim(), copies: Number(newCopies.value) || 0 });
-    localStorage.setItem('books', JSON.stringify(books));
-    logAudit("ADD_BOOK", "Added new book ISBN: " + isbn + " (Qty: " + newCopies.value + ")");
-    
-    newISBN.value = ''; newTitle.value = ''; newAuthor.value = ''; newCategory.value = ''; newCopies.value = '';
-    if(typeof renderBookInventory === 'function') renderBookInventory();
-}
-
-function renderBookInventory(){
-    var bl = JSON.parse(localStorage.getItem('books') || '[]'); var bor = JSON.parse(localStorage.getItem('borrowLogs') || '[]');
-    var searchEl = document.getElementById('bookSearch'); var q = (searchEl ? searchEl.value || '' : '').toLowerCase();
-    var html = '';
-    var filtered = bl.filter(function(b){ return (b.id + ' ' + b.isbn + ' ' + b.title + ' ' + b.author + ' ' + b.category).toLowerCase().indexOf(q) !== -1; });
-    
-    for(var i=0; i<filtered.length; i++) {
-        var b = filtered[i]; 
-        var bc = 0; var lostC = 0; var dmgC = 0;
-        
-        for(var j=0; j<bor.length; j++) { 
-            if(String(bor[j].b).trim() === String(b.isbn).trim()) {
-                if (bor[j].s === 'BORROWED' || bor[j].s === 'OVERDUE') { bc += (Number(bor[j].qty) || 1); }
-                else if (bor[j].s === 'LOST') { lostC += (Number(bor[j].qty) || 1); }
-                else if (bor[j].s === 'DAMAGED') { dmgC += (Number(bor[j].qty) || 1); }
-            } 
-        }
-        var tc = Number(b.copies) || 0; 
-        var rem = tc - bc - lostC - dmgC;
-        var statusStyle = rem > 0 ? 'color: #16a34a; font-weight: bold;' : 'color: #dc2626; font-weight: bold;';
-        
-        html += '<tr><td>' + (b.isbn||'') + '</td><td>' + (b.title||'') + '</td><td>' + (b.author||'') + '</td><td>' + (b.category||'') + '</td><td>' + tc + '</td><td>' + bc + '</td><td>' + lostC + '</td><td>' + dmgC + '</td><td>' + rem + '</td><td style="' + statusStyle + '">' + (rem > 0 ? 'Available' : 'Out of Stock') + '</td></tr>';
+    _libPopulateSelectors();
+    var rec={
+        id:(document.getElementById('newBookId')||{}).value||'', isbn:(document.getElementById('newISBN')||{}).value||'', title:(document.getElementById('newTitle')||{}).value||'', author:(document.getElementById('newAuthor')||{}).value||'',
+        subject:(document.getElementById('newSubject')||{}).value||'', yearLevel:(document.getElementById('newYearLevel')||{}).value||'', copies:_libInt((document.getElementById('newCopies')||{}).value,0), unitCost:_libMoney((document.getElementById('newBookUnitCost')||{}).value),
+        estimatedUsefulLife:_libInt((document.getElementById('newBookUsefulLife')||{}).value,0), icsNo:(document.getElementById('newBookIcsNo')||{}).value||'', fundCluster:(document.getElementById('newBookFundCluster')||{}).value||'', dateAcquired:_libDateOnly((document.getElementById('newBookDateAcquired')||{}).value||'')
+    };
+    Object.keys(rec).forEach(function(k){if(typeof rec[k]==='string')rec[k]=rec[k].replace(/\s+/g,' ').trim();});
+    var err=_libValidate(rec); if(err){toast('❌ '+err,'red');return;}
+    var duplicate=books.find(function(b){return String(b.isbn).trim().toLowerCase()===rec.isbn.toLowerCase()&&String(b.id)!==String(editingBookId);}); if(duplicate){toast('❌ ISBN already exists in the library inventory.','red');return;}
+    var duplicateId=books.find(function(b){return String(b.id).trim().toLowerCase()===rec.id.toLowerCase()&&String(b.id)!==String(editingBookId);}); if(duplicateId){toast('❌ Inventory Item No. already exists.','red');return;}
+    var ex=editingBookId?books.find(function(b){return String(b.id)===String(editingBookId);}):null;
+    if(ex){
+        var counts=_libCounts(ex.isbn); if(rec.copies<counts.out){toast('❌ Quantity cannot be below '+counts.out+' copies already borrowed/lost/damaged.','red');return;}
+        if(String(ex.isbn)!==String(rec.isbn)&&borrowLogs.some(function(x){return String(x.b)===String(ex.isbn);})){toast('❌ ISBN cannot be changed because transaction history already exists for this book.','red');return;}
+        Object.assign(ex,rec,{category:rec.subject,measureUnit:'copy',totalCost:Math.round(rec.copies*rec.unitCost*100)/100,coaAccountCode:LIB_COA_ACCOUNT_CODE,coaCategory:LIB_COA_CATEGORY,assignedUnit:LIB_ASSIGNED_UNIT,icsAligned:true,updatedAt:Date.now(),updatedBy:currentSession.inCharge||''});
+        logAudit('UPDATE_BOOK_ICS','Updated ICS library record '+ex.id+' / '+ex.isbn); toast('✅ ICS book record updated.','green');
+    }else{
+        books.push(Object.assign({},rec,{category:rec.subject,measureUnit:'copy',totalCost:Math.round(rec.copies*rec.unitCost*100)/100,coaAccountCode:LIB_COA_ACCOUNT_CODE,coaCategory:LIB_COA_CATEGORY,assignedUnit:LIB_ASSIGNED_UNIT,icsAligned:true,addedAt:Date.now(),addedBy:currentSession.inCharge||''}));
+        logAudit('ADD_BOOK_ICS','Added ICS library record '+rec.id+' / '+rec.isbn+' (Qty: '+rec.copies+')'); toast('✅ ICS book record saved.','green');
     }
-    document.getElementById('bookInventoryTbl').innerHTML = html;
+    localStorage.setItem('books',JSON.stringify(books)); _libResetForm(); renderBookInventory();
 }
-
+function renderBookInventory(){
+    _libMigrateBooks(); _libPopulateSelectors();
+    var searchEl=document.getElementById('bookSearch'), q=(searchEl?searchEl.value||'':'').toLowerCase(); var sf=document.getElementById('bookSubjectFilter'),yf=document.getElementById('bookYearFilter'); var sv=sf?sf.value:'ALL',yv=yf?yf.value:'ALL'; var html='';
+    var filtered=books.filter(function(b){var subj=b.subject||b.category||'', yr=b.yearLevel||'';var hay=[b.id,b.isbn,b.title,b.author,subj,yr,b.icsNo,b.fundCluster,b.coaAccountCode].join(' ').toLowerCase(); return hay.indexOf(q)!==-1&&(sv==='ALL'||subj===sv)&&(yv==='ALL'||yr===yv);});
+    filtered.sort(function(a,b){return String(a.yearLevel||'').localeCompare(String(b.yearLevel||''),undefined,{numeric:true})||String(a.subject||a.category||'').localeCompare(String(b.subject||b.category||''))||String(a.title||'').localeCompare(String(b.title||''));});
+    filtered.forEach(function(b){var c=_libCounts(b.isbn),tc=Number(b.copies)||0,rem=tc-c.out,total=_libBookTotal(b),ok=!!b.icsAligned; var status=rem>0?'Available':'Out of Stock';
+        html+='<tr><td>'+_libEsc(b.id||'')+(ok?'':'<br><span style="font-size:10px;color:#b45309;font-weight:800;">⚠ Complete ICS</span>')+'</td><td>'+_libEsc(b.isbn||'')+'</td><td>'+_libEsc(b.title||'')+'</td><td>'+_libEsc(b.author||'')+'</td><td>'+_libEsc(b.subject||b.category||'')+'</td><td>'+_libEsc(b.yearLevel||'')+'</td><td><b>'+LIB_COA_ACCOUNT_CODE+'</b><br><span style="font-size:10px;color:#64748b;">Semi-Expendable Books</span></td><td>'+tc+'</td><td>₱'+_libMoney(b.unitCost).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td>₱'+total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td>'+_libEsc(b.estimatedUsefulLife||'')+'</td><td>'+_libEsc(b.icsNo||'')+'</td><td>'+_libEsc(b.fundCluster||'')+'</td><td>'+_libEsc(b.dateAcquired||'')+'</td><td>'+c.borrowed+'</td><td>'+c.lost+'</td><td>'+c.damaged+'</td><td>'+rem+'</td><td style="'+(rem>0?'color:#16a34a':'color:#dc2626')+';font-weight:bold;">'+status+'</td><td><button style="padding:5px 8px;font-size:11px;" onclick="editBook(\''+String(b.id).replace(/'/g,"\\'")+'\')">Edit</button></td></tr>';
+    });
+    document.getElementById('bookInventoryTbl').innerHTML=html||'<tr><td colspan="20">No library records match the current filter.</td></tr>';
+}
 function importBooks(){
-    var fileInput = document.getElementById('bookExcelFile');
-    if(!fileInput || !fileInput.files || fileInput.files.length === 0) return;
-    var f = fileInput.files[0]; var r = new FileReader();
-    r.onload = function(e){
-        if(typeof XLSX === 'undefined') return;
-        var wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-        var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        var added = 0, updated = 0;
-        rows.forEach(function(x){
-            var id = String(x["Book ID"] || "").trim(); if(!id) return;
-            var cp = Number(x.Copies) || 0; var isbn = String(x.ISBN || '').trim();
-            var exArray = books.filter(function(b){ return String(b.isbn).trim() === isbn; });
-            if(exArray.length > 0){
-                var ex = exArray[0]; ex.id = id || ex.id; ex.isbn = isbn; ex.title = x.Title; ex.author = x.Author; ex.category = x.Category; ex.copies = (Number(ex.copies) || 0) + cp; updated++;
-            } else { books.push({id: id, isbn: isbn, title: x.Title, author: x.Author, category: x.Category, copies: cp}); added++; }
-        });
-        localStorage.setItem('books', JSON.stringify(books));
-        logAudit("BULK_IMPORT_BOOKS", "Uploaded: " + added + " New Books, Updated: " + updated);
-        document.getElementById('bookImportResult').innerHTML = "Uploaded: " + added + " New Books, " + updated + " Updated Only";
-        renderBookInventory();
+    var fileInput=document.getElementById('bookExcelFile'),res=document.getElementById('bookImportResult');
+    if(!fileInput||!fileInput.files||!fileInput.files.length){toast('Choose an Excel file first.','yellow');return;}
+    if(typeof XLSX==='undefined'){alert('Local Excel library not loaded.');return;}
+    var f=fileInput.files[0],r=new FileReader();
+    r.onload=function(e){
+        var added=0,updated=0,legacy=0,invalid=0,problems=[];
+        try{
+            var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+            var sn=wb.SheetNames.indexOf('Library ICS Inventory')!==-1?'Library ICS Inventory':(wb.SheetNames.indexOf('Books')!==-1?'Books':wb.SheetNames[0]);
+            if(!sn)throw new Error('Workbook has no worksheet.');
+            var ws=wb.Sheets[sn];
+            var matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+            var headers=(matrix[0]||[]).map(function(h){return String(h).replace(/[^a-z0-9]/gi,'').toLowerCase();});
+            var isIcs=headers.indexOf('inventoryitemno')!==-1||headers.indexOf('unitcost')!==-1||headers.indexOf('yearlevel')!==-1;
+            var rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+            rows.forEach(function(x,idx){
+                var id=_libPick(x,['inventoryitemno','inventoryitemnumber','bookid','id']);
+                var isbn=_libPick(x,['isbn']);
+                var title=_libPick(x,['title','booktitle']);
+                var author=_libPick(x,['author','publisher','authorpublisher']);
+                var subject=_libPick(x,['subject','category']);
+                var year=_libPick(x,['yearlevel','gradelevel','grade']);
+                var copies=_libInt(_libPick(x,['quantity','copies','qty']),0);
+                var unitCost=_libMoney(_libPick(x,['unitcost','cost']));
+                var useful=_libInt(_libPick(x,['estimatedusefullife','usefullife','estimatedlife']),0);
+                var icsNo=_libPick(x,['icsno','icsnumber','inventorycustodianslipno']);
+                var fund=_libPick(x,['fundcluster','fund']);
+                var date=_libDateOnly(_libPick(x,['dateacquired','acquisitiondate','datepurchased']));
+                var assigned=_libPick(x,['assignedunit','office','facility'])||LIB_ASSIGNED_UNIT;
+                if(!id&&!isbn&&!title&&!subject&&!copies)return;
+                if(!id||!isbn||!title||copies<1){invalid++;problems.push('Row '+(idx+2)+': InventoryItemNo, ISBN, Title and positive Quantity are required.');return;}
+                var ex=books.find(function(b){return String(b.isbn).trim().toLowerCase()===isbn.toLowerCase()||String(b.id).trim().toLowerCase()===id.toLowerCase();});
+                if(!isIcs){
+                    var addSubject=subject||'Other';
+                    if(ex){ex.copies=(Number(ex.copies)||0)+copies;ex.title=title||ex.title;ex.author=author||ex.author;ex.subject=addSubject;ex.category=addSubject;ex.coaAccountCode=LIB_COA_ACCOUNT_CODE;ex.coaCategory=LIB_COA_CATEGORY;ex.assignedUnit=LIB_ASSIGNED_UNIT;ex.measureUnit='copy';ex.icsAligned=false;ex.icsComplianceNote='Imported from legacy Book Inventory template — complete Year Level, Unit Cost, Estimated Useful Life and ICS fields.';updated++;}
+                    else{books.push({id:id,isbn:isbn,title:title,author:author,subject:addSubject,category:addSubject,yearLevel:'',copies:copies,measureUnit:'copy',unitCost:0,totalCost:0,estimatedUsefulLife:0,icsNo:'',fundCluster:'',dateAcquired:'',assignedUnit:LIB_ASSIGNED_UNIT,coaAccountCode:LIB_COA_ACCOUNT_CODE,coaCategory:LIB_COA_CATEGORY,icsAligned:false,icsComplianceNote:'Imported from legacy Book Inventory template — complete Year Level, Unit Cost, Estimated Useful Life and ICS fields.',addedAt:Date.now(),addedBy:currentSession.inCharge||''});added++;}
+                    legacy++;problems.push('Row '+(idx+2)+' ('+id+'): legacy row imported; use Edit to complete ICS fields.');return;
+                }
+                if(String(assigned).trim().toLowerCase()!==LIB_ASSIGNED_UNIT.toLowerCase()){invalid++;problems.push('Row '+(idx+2)+' ('+id+'): AssignedUnit must be School Library.');return;}
+                var rec={id:id,isbn:isbn,title:title,author:author,subject:subject,yearLevel:year,copies:copies,unitCost:unitCost,estimatedUsefulLife:useful,icsNo:icsNo,fundCluster:fund,dateAcquired:date};
+                var err=_libValidate(rec);if(err){invalid++;problems.push('Row '+(idx+2)+' ('+id+'): '+err);return;}
+                if(ex){
+                    if(String(ex.isbn)!==String(isbn)&&borrowLogs.some(function(log){return String(log.b)===String(ex.isbn); })){invalid++;problems.push('Row '+(idx+2)+' ('+id+'): ISBN cannot be changed because borrowing history exists for '+ex.isbn+'.');return;}
+                    var counts=_libCounts(ex.isbn);var newCopies=(Number(ex.copies)||0)+copies;if(newCopies<counts.out){invalid++;problems.push('Row '+(idx+2)+' ('+id+'): resulting copies would be below accounted-out copies.');return;}
+                    ex.id=id;ex.isbn=isbn;ex.title=title;ex.author=author;ex.subject=subject;ex.category=subject;ex.yearLevel=year;ex.copies=newCopies;ex.measureUnit='copy';ex.unitCost=unitCost;ex.totalCost=Math.round(newCopies*unitCost*100)/100;ex.estimatedUsefulLife=useful;ex.icsNo=icsNo;ex.fundCluster=fund;ex.dateAcquired=date;ex.assignedUnit=LIB_ASSIGNED_UNIT;ex.coaAccountCode=LIB_COA_ACCOUNT_CODE;ex.coaCategory=LIB_COA_CATEGORY;ex.icsAligned=true;delete ex.icsComplianceNote;ex.updatedAt=Date.now();ex.updatedBy=currentSession.inCharge||'';updated++;
+                }else{
+                    books.push({id:id,isbn:isbn,title:title,author:author,subject:subject,category:subject,yearLevel:year,copies:copies,measureUnit:'copy',unitCost:unitCost,totalCost:Math.round(copies*unitCost*100)/100,estimatedUsefulLife:useful,icsNo:icsNo,fundCluster:fund,dateAcquired:date,assignedUnit:LIB_ASSIGNED_UNIT,coaAccountCode:LIB_COA_ACCOUNT_CODE,coaCategory:LIB_COA_CATEGORY,icsAligned:true,addedAt:Date.now(),addedBy:currentSession.inCharge||''});added++;
+                }
+            });
+        }catch(err){if(res){res.style.color='#dc2626';res.textContent='Could not read/import workbook: '+(err.message||err);}toast('❌ Library import failed.','red');return;}
+        localStorage.setItem('books',JSON.stringify(books));logAudit('BULK_IMPORT_BOOKS_ICS','Added: '+added+', Updated: '+updated+', Legacy: '+legacy+', Invalid: '+invalid+' (file: '+f.name+')');
+        if(res){res.style.color=(legacy||invalid)?'#b45309':'#16a34a';res.innerHTML='✅ Added: <b>'+added+'</b> &nbsp; ♻ Updated: <b>'+updated+'</b> &nbsp; 🧾 Legacy needing ICS completion: <b>'+legacy+'</b> &nbsp; ⚠ Invalid: <b>'+invalid+'</b>'+(problems.length?'<div style="margin-top:6px;font-weight:400;color:#64748b;font-size:12px;">'+problems.slice(0,18).map(_libEsc).join('<br>')+(problems.length>18?'<br>… and '+(problems.length-18)+' more':'')+'</div>':'');}
+        fileInput.value='';renderBookInventory();toast('📥 Library import complete — '+added+' added, '+updated+' updated.',(legacy||invalid)?'yellow':'green');
     };
     r.readAsArrayBuffer(f);
 }
 
-function downloadBookTemplate(){
-    var data = [{"Book ID": "B0001", "ISBN": "9789711234567", "Title": "English 7", "Author": "DepEd", "Category": "English", "Copies": 5}];
-    if(typeof XLSX !== 'undefined') { var ws = XLSX.utils.json_to_sheet(data); var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Books"); XLSX.writeFile(wb, "Book_Inventory_Template.xlsx"); }
+async function downloadBookTemplate(){
+    if(typeof XLSX==='undefined'){alert('Local Excel library not loaded.');return;}
+    try{
+        var headers=['InventoryItemNo','ISBN','Title','AuthorPublisher','Subject','YearLevel','Quantity','Unit','UnitCost','TotalCost','EstimatedUsefulLife','ICSNo','FundCluster','DateAcquired','AssignedUnit','COAAccountCode','COACategory'];
+        var ws=XLSX.utils.aoa_to_sheet([headers,['LIB-ENG-07-0001','9789711234567','English 7','DepEd','English','Grade 7',5,'copy',350,1750,5,'ICS-2026-001','01','2026-01-15','School Library',LIB_COA_ACCOUNT_CODE,LIB_COA_CATEGORY]]);
+        var guide=XLSX.utils.aoa_to_sheet([['QLog COA ICS-Style Library Inventory Template'],['COA account',LIB_COA_ACCOUNT_CODE+' - '+LIB_COA_CATEGORY],['Purpose','Use this sheet for semi-expendable books assigned to School Library. Organize by Subject and Year Level.'],['Quantity','Number of physical copies for the same title/ISBN record.'],['UnitCost rule','For this semi-expendable workflow, unit cost must be below ₱50,000 and useful life must be more than one year.'],['Borrowing key','ISBN remains required so existing QLog borrowing/return history stays stable.'],['Do not rename','Do not rename the Library ICS Inventory sheet.']]);
+        var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Library ICS Inventory');XLSX.utils.book_append_sheet(wb,guide,'Instructions');
+        await downloadWorkbookWithValidations(wb,'Library ICS Inventory',[
+            {sqref:'E2:E2001',values:LIB_SUBJECTS,allowBlank:false,promptTitle:'Subject',prompt:'Choose the subject classification.',errorTitle:'Invalid Subject',error:'Choose a Subject from the dropdown list.'},
+            {sqref:'F2:F2001',values:LIB_YEAR_LEVELS,allowBlank:false,promptTitle:'Year Level',prompt:'Choose the intended year level.',errorTitle:'Invalid Year Level',error:'Choose a Year Level from the dropdown list.'},
+            {sqref:'H2:H2001',values:['copy'],allowBlank:false,promptTitle:'Unit',prompt:'Library inventory unit is copy.',errorTitle:'Invalid Unit',error:'Use copy for the Unit.'},
+            {sqref:'O2:O2001',values:[LIB_ASSIGNED_UNIT],allowBlank:false,promptTitle:'Assigned Unit',prompt:'Books are assigned to School Library.',errorTitle:'Invalid Assigned Unit',error:'Use School Library.'},
+            {sqref:'P2:P2001',values:[LIB_COA_ACCOUNT_CODE],allowBlank:false,promptTitle:'COA Account',prompt:'Semi-Expendable Books account.',errorTitle:'Invalid COA Account',error:'Use '+LIB_COA_ACCOUNT_CODE+'.'},
+            {sqref:'Q2:Q2001',values:[LIB_COA_CATEGORY],allowBlank:false,promptTitle:'COA Category',prompt:'Books use the semi-expendable books category.',errorTitle:'Invalid COA Category',error:'Use '+LIB_COA_CATEGORY+'.'}
+        ],'QLOG_COA_ICS_Library_Inventory_Template.xlsx');
+        logAudit('TEMPLATE_DOWNLOAD','COA ICS-style Library Inventory template downloaded'); toast('⬇ Library ICS template downloaded with Subject and Year Level dropdowns.','green');
+    }catch(err){console.error('[library-template]',err);toast('❌ Could not generate Library ICS template: '+(err.message||err),'red');}
 }
 
 function stageScannedBook() {
@@ -5782,60 +6123,32 @@ function renderBorrow(){
     updateBorrowingDashboard();
 }
 
-function exportBookInventory() {
-    if(books.length === 0) { alert('No books found in inventory.'); return; }
-    if(typeof XLSX !== 'undefined') {
-        var ws = XLSX.utils.json_to_sheet(books);
-        addSignatureToExcel(ws);
-        var wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Book Inventory");
-        XLSX.writeFile(wb, "Book_Inventory.xlsx");
-    }
+async function exportBookInventory() {
+    if(books.length===0){alert('No books found in inventory.');return;}
+    var rows=books.map(function(b,i){return {no:i+1,inventoryNo:b.id||'',isbn:b.isbn||'',title:b.title||'',author:b.author||'',subject:b.subject||b.category||'',yearLevel:b.yearLevel||'',qty:Number(b.copies)||0,unit:'copy',unitCost:_libMoney(b.unitCost),totalCost:_libBookTotal(b),usefulLife:b.estimatedUsefulLife||'',icsNo:b.icsNo||'',fundCluster:b.fundCluster||'',dateAcquired:b.dateAcquired||'',assignedUnit:LIB_ASSIGNED_UNIT,coaAccount:LIB_COA_ACCOUNT_CODE,icsStatus:b.icsAligned?'COMPLETE':'COMPLETE ICS FIELDS'};});
+    var cols=[{key:'no',label:'No.',width:7,align:'center'},{key:'inventoryNo',label:'Inventory Item No.',width:20},{key:'isbn',label:'ISBN',width:17},{key:'title',label:'Title',width:34},{key:'author',label:'Author / Publisher',width:24},{key:'subject',label:'Subject',width:20},{key:'yearLevel',label:'Year Level',width:16},{key:'qty',label:'Qty',width:8,type:'number',align:'center'},{key:'unit',label:'Unit',width:9,align:'center'},{key:'unitCost',label:'Unit Cost',width:14,type:'money'},{key:'totalCost',label:'Total Cost',width:15,type:'money'},{key:'usefulLife',label:'Useful Life',width:13,align:'center'},{key:'icsNo',label:'ICS No.',width:18},{key:'fundCluster',label:'Fund Cluster',width:13},{key:'dateAcquired',label:'Date Acquired',width:14},{key:'assignedUnit',label:'Assigned Unit',width:18},{key:'coaAccount',label:'COA Account',width:14},{key:'icsStatus',label:'ICS Status',width:16}];
+    if(typeof QLogExport!=='undefined'&&QLogExport.downloadTableXlsx) await QLogExport.downloadTableXlsx({title:'COA ICS-Style Library Inventory',subtitle:LIB_COA_ACCOUNT_CODE+' — '+LIB_COA_CATEGORY,rows:rows,columns:cols,orientation:'landscape',sheetName:'Library ICS Inventory',filename:'QLOG_COA_ICS_Library_Inventory.xlsx',facility:LIB_ASSIGNED_UNIT});
 }
 
 function printBookInventory() {
-    if(books.length === 0) { alert('No books found in inventory.'); return; }
-    var w = window.open('','','width=1000,height=800');
-    var sigHtml = getSignatureBlock();
-    var html = '<html><head><title>Book Inventory Report</title><style>body{font-family:"Segoe UI", Arial, sans-serif;padding:25px;} h2{text-align:center;margin:4px;color:#1e3a8a;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #cbd5e1;padding:10px;text-align:center;font-size:14px;} th{background:#f1f5f9; color:#0f172a;}</style></head><body>';
-    html += '<h2>📚 Book Inventory Report</h2>';
-    html += '<table><thead><tr><th>ISBN</th><th>Title</th><th>Author</th><th>Category</th><th>Total Copies</th></tr></thead><tbody>';
-    books.forEach(function(b) {
-        html += '<tr><td>' + b.isbn + '</td><td>' + b.title + '</td><td>' + b.author + '</td><td>' + b.category + '</td><td>' + b.copies + '</td></tr>';
-    });
-    html += '</tbody></table>' + sigHtml + '</body></html>';
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(function(){ w.print(); w.close(); }, 300);
+    if(books.length===0){alert('No books found in inventory.');return;}
+    var rows=books.map(function(b,i){return {no:i+1,inventoryNo:b.id||'',isbn:b.isbn||'',title:b.title||'',subject:b.subject||b.category||'',yearLevel:b.yearLevel||'',qty:Number(b.copies)||0,unitCost:_libMoney(b.unitCost),totalCost:_libBookTotal(b),icsNo:b.icsNo||'',dateAcquired:b.dateAcquired||''};});
+    var cols=[{key:'no',label:'No.',width:7,align:'center'},{key:'inventoryNo',label:'Inventory Item No.',width:20},{key:'isbn',label:'ISBN',width:17},{key:'title',label:'Title',width:32},{key:'subject',label:'Subject',width:18},{key:'yearLevel',label:'Year Level',width:14},{key:'qty',label:'Qty',width:8,type:'number',align:'center'},{key:'unitCost',label:'Unit Cost',width:13,type:'money'},{key:'totalCost',label:'Total Cost',width:14,type:'money'},{key:'icsNo',label:'ICS No.',width:17},{key:'dateAcquired',label:'Date Acquired',width:14}];
+    if(typeof QLogExport!=='undefined'&&QLogExport.printTable) QLogExport.printTable({title:'COA ICS-Style Library Inventory',subtitle:LIB_COA_ACCOUNT_CODE+' — '+LIB_COA_CATEGORY,rows:rows,columns:cols,orientation:'landscape',facility:LIB_ASSIGNED_UNIT,summary:[{label:'Titles',value:rows.length},{label:'Copies',value:rows.reduce(function(s,r){return s+r.qty;},0)},{label:'Total Value',value:'₱'+rows.reduce(function(s,r){return s+r.totalCost;},0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}]});
 }
 
-function exportBorrowLogs() {
+async function exportBorrowLogs() {
     if(borrowLogs.length === 0) { alert('No borrow logs found.'); return; }
-    if(typeof XLSX !== 'undefined') {
-        var ws = XLSX.utils.json_to_sheet(borrowLogs);
-        addSignatureToExcel(ws);
-        var wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Borrow Logs");
-        XLSX.writeFile(wb, "Borrow_Logs.xlsx");
-    }
+    var rows=borrowLogs.slice().reverse().map(function(r,i){var bk=_reportBookByIsbn(r.b);return {no:i+1,borrowerId:r.l||'',borrower:r.learnerName||'',gradeSection:r.gs||'',isbn:r.b||'',title:r.title||(bk?bk.title:'')||'',qty:Number(r.qty)||1,status:r.s||'',borrowed:r.borrowedAt||'',due:r.dueDateStr||'',returned:r.returnedAt||'',overdue:Number(r.overdueDays)||0,extensions:Number(r.extensions)||0,remarks:r.remarks||''};});
+    var cols=[{key:'no',label:'No.',width:7,align:'center'},{key:'borrowerId',label:'Borrower ID',width:18},{key:'borrower',label:'Borrower Name',width:28},{key:'gradeSection',label:'Grade & Section',width:18},{key:'isbn',label:'ISBN',width:17},{key:'title',label:'Book Title',width:30},{key:'qty',label:'Qty',width:8,type:'number',align:'center'},{key:'status',label:'Status',width:13,align:'center'},{key:'borrowed',label:'Borrowed',width:20},{key:'due',label:'Due Date',width:15},{key:'returned',label:'Returned',width:20},{key:'overdue',label:'Overdue Days',width:12,type:'number'},{key:'extensions',label:'Extensions',width:11,type:'number'},{key:'remarks',label:'Remarks',width:34}];
+    if(typeof QLogExport!=='undefined'&&QLogExport.downloadTableXlsx) await QLogExport.downloadTableXlsx({title:'Library Borrowing & Returns Report',subtitle:'Complete book circulation transaction log',rows:rows,columns:cols,orientation:'landscape',sheetName:'Borrow Logs',filename:'QLOG_Library_Borrow_Return_Logs.xlsx',facility:LIB_ASSIGNED_UNIT});
 }
 
 function printBorrowLogs() {
     if(borrowLogs.length === 0) { alert('No borrow logs found.'); return; }
-    var w = window.open('','','width=1200,height=800');
-    var sigHtml = getSignatureBlock();
-    var html = '<html><head><title>Borrow Logs Report</title><style>body{font-family:"Segoe UI", Arial, sans-serif;padding:25px;} h2{text-align:center;margin:4px;color:#1e3a8a;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:12px;} th{background:#f1f5f9; color:#0f172a;}</style></head><body>';
-    html += '<h2>📖 Borrowing & Returns Report</h2>';
-    html += '<table><thead><tr><th>Borrower ID</th><th>Name</th><th>ISBN</th><th>Status</th><th>Borrow Date</th><th>Due Date</th><th>Return Date</th></tr></thead><tbody>';
-    borrowLogs.slice().reverse().forEach(function(r) {
-        html += '<tr><td>' + r.l + '</td><td>' + r.learnerName + '</td><td>' + r.b + '</td><td>' + r.s + '</td><td>' + r.borrowedAt + '</td><td>' + r.dueDateStr + '</td><td>' + (r.returnedAt || '--') + '</td></tr>';
-    });
-    html += '</tbody></table>' + sigHtml + '</body></html>';
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(function(){ w.print(); w.close(); }, 300);
+    var rows=borrowLogs.slice().reverse().map(function(r,i){var bk=_reportBookByIsbn(r.b);return {no:i+1,borrowerId:r.l||'',borrower:r.learnerName||'',isbn:r.b||'',title:r.title||(bk?bk.title:'')||'',qty:Number(r.qty)||1,status:r.s||'',borrowed:r.borrowedAt||'',due:r.dueDateStr||'',returned:r.returnedAt||'',overdue:Number(r.overdueDays)||0};});
+    var cols=[{key:'no',label:'No.',width:7,align:'center'},{key:'borrowerId',label:'Borrower ID',width:18},{key:'borrower',label:'Borrower Name',width:26},{key:'isbn',label:'ISBN',width:17},{key:'title',label:'Book Title',width:30},{key:'qty',label:'Qty',width:8,type:'number',align:'center'},{key:'status',label:'Status',width:13},{key:'borrowed',label:'Borrowed',width:19},{key:'due',label:'Due Date',width:15},{key:'returned',label:'Returned',width:19},{key:'overdue',label:'Overdue Days',width:12,type:'number'}];
+    if(typeof QLogExport!=='undefined'&&QLogExport.printTable) QLogExport.printTable({title:'Library Borrowing & Returns Report',subtitle:'Filtered/complete circulation history',rows:rows,columns:cols,orientation:'landscape',facility:LIB_ASSIGNED_UNIT});
 }
 
 // Window load function added to ensure immediate population
@@ -5970,18 +6283,24 @@ function checkOverdueEquipment(){
 
 /* ---------- COA / ICS alignment ---------- */
 var COA_PPE_CAPITALIZATION_THRESHOLD = 50000; // COA Circular No. 2022-004: PPE threshold is P50,000 and above.
+/* COA GAM semi-expendable Machinery & Equipment subsidiary categories.
+   Books are intentionally excluded here: QLog manages COA 10406020 in the Library Inventory. */
 var ICS_SEMI_EXPENDABLE_CATEGORIES = [
+    'Machinery',
     'Office Equipment',
     'Information and Communication Technology Equipment',
+    'Agricultural and Forestry Equipment',
+    'Marine and Fishery Equipment',
+    'Airport Equipment',
     'Communication Equipment',
+    'Disaster Response and Rescue Equipment',
+    'Military, Police and Security Equipment',
     'Medical Equipment',
     'Printing Equipment',
     'Sports Equipment',
     'Technical and Scientific Equipment',
     'Other Machinery and Equipment',
-    'Furniture and Fixtures',
-    'Books',
-    'Other Semi-Expendable Property'
+    'Furniture and Fixtures'
 ];
 var ICS_MEASURE_UNITS = ['unit','piece','set','lot','box','pack','pair','roll','ream'];
 var EQ_CONDITIONS = ['Good','Fair','With Minor Defect','For Maintenance','Damaged'];
@@ -6005,14 +6324,59 @@ function _eqNormalizeCategory(v){
         'ict':'Information and Communication Technology Equipment',
         'ict equipment':'Information and Communication Technology Equipment',
         'computer equipment':'Information and Communication Technology Equipment',
+        'computer':'Information and Communication Technology Equipment',
         'laboratory apparatus':'Technical and Scientific Equipment',
         'laboratory equipment':'Technical and Scientific Equipment',
         'science equipment':'Technical and Scientific Equipment',
         'technical equipment':'Technical and Scientific Equipment',
         'furniture':'Furniture and Fixtures',
-        'book':'Books'
+        'security equipment':'Military, Police and Security Equipment',
+        'rescue equipment':'Disaster Response and Rescue Equipment',
+        'agricultural equipment':'Agricultural and Forestry Equipment',
+        'marine equipment':'Marine and Fishery Equipment'
     };
     return aliases[raw.toLowerCase()] || '';
+}
+function _eqUnitCategorySuggestions(unitName){
+    var u=String(unitName||'').toLowerCase();
+    var sets=[];
+    function add(arr){ arr.forEach(function(x){ if(sets.indexOf(x)===-1) sets.push(x); }); }
+    var common=['Office Equipment','Information and Communication Technology Equipment','Furniture and Fixtures'];
+    if(/librar/.test(u)) add(['Office Equipment','Information and Communication Technology Equipment','Printing Equipment','Communication Equipment','Furniture and Fixtures']);
+    else if(/science|laborator|stem|research/.test(u)) add(['Technical and Scientific Equipment','Information and Communication Technology Equipment','Office Equipment','Furniture and Fixtures']);
+    else if(/computer|ict|technology|it\b|e-?class|multimedia/.test(u)) add(['Information and Communication Technology Equipment','Communication Equipment','Printing Equipment','Office Equipment','Furniture and Fixtures','Technical and Scientific Equipment']);
+    else if(/clinic|health|medical|nurse|infirmary/.test(u)) add(['Medical Equipment','Office Equipment','Information and Communication Technology Equipment','Communication Equipment','Furniture and Fixtures']);
+    else if(/sport|physical education|\bpe\b|gym|athletic/.test(u)) add(['Sports Equipment','Office Equipment','Information and Communication Technology Equipment','Communication Equipment','Furniture and Fixtures']);
+    else if(/guard|security|police/.test(u)) add(['Military, Police and Security Equipment','Communication Equipment','Information and Communication Technology Equipment','Office Equipment','Furniture and Fixtures']);
+    else if(/drrm|disaster|rescue|emergency/.test(u)) add(['Disaster Response and Rescue Equipment','Communication Equipment','Information and Communication Technology Equipment','Office Equipment','Furniture and Fixtures']);
+    else if(/agri|agriculture|farm|garden|forestry|gulayan/.test(u)) add(['Agricultural and Forestry Equipment','Technical and Scientific Equipment','Information and Communication Technology Equipment','Office Equipment','Furniture and Fixtures']);
+    else if(/marine|fish|fisher/.test(u)) add(['Marine and Fishery Equipment','Technical and Scientific Equipment','Information and Communication Technology Equipment','Office Equipment']);
+    else if(/print|publication|press|journalism/.test(u)) add(['Printing Equipment','Information and Communication Technology Equipment','Office Equipment','Communication Equipment','Furniture and Fixtures']);
+    else if(/airport|aviation/.test(u)) add(['Airport Equipment','Communication Equipment','Information and Communication Technology Equipment','Office Equipment']);
+    else if(/office|admin|principal|faculty|registrar|guidance|account|finance|hr|records/.test(u)) add(['Office Equipment','Information and Communication Technology Equipment','Communication Equipment','Printing Equipment','Furniture and Fixtures']);
+    else if(u.trim()) { add(common); add(['Communication Equipment','Printing Equipment','Technical and Scientific Equipment','Sports Equipment','Medical Equipment','Agricultural and Forestry Equipment','Disaster Response and Rescue Equipment','Other Machinery and Equipment','Machinery']); }
+    else add(ICS_SEMI_EXPENDABLE_CATEGORIES);
+    return sets.filter(function(x){ return x !== 'Books'; });
+}
+function updateEquipCategorySuggestions(clearInvalid){
+    var unitEl=document.getElementById('eqNewUnit'), catEl=document.getElementById('eqNewCategory'), hint=document.getElementById('eqCategoryHint');
+    var unit=unitEl?unitEl.value:'';
+    var opts=_eqUnitCategorySuggestions(unit);
+    populateDatalist('eqCategoryList',opts);
+    if(catEl){
+        catEl.placeholder=unit?'Choose a category for '+unit:'Select Assigned Unit first';
+        var normalized=_eqNormalizeCategory(catEl.value);
+        if(clearInvalid && catEl.value && (!normalized || opts.indexOf(normalized)===-1)){
+            catEl.value='';
+            toast('ℹ Category cleared because it does not match the selected Assigned Unit.','yellow');
+        }
+    }
+    if(hint) hint.textContent=(unit?'Suggested for '+unit+': '+opts.join(' • '):'Suggestions are filtered by Assigned Unit. Books are managed in Library Inventory.');
+    return opts;
+}
+function _eqCategoryAllowedForUnit(category,unit){
+    var c=_eqNormalizeCategory(category);
+    return !!c && _eqUnitCategorySuggestions(unit).indexOf(c)!==-1;
 }
 function _eqTotalCost(e){
     var q = _eqPositiveInt(e.quantity,1);
@@ -6031,6 +6395,7 @@ function _eqResetRegistryForm(){
     var defaults = {eqNewId:'',eqNewName:'',eqNewCategory:'',eqNewSerialNo:'',eqNewQuantity:'1',eqNewMeasureUnit:'unit',eqNewUnitCost:'',eqNewUsefulLife:'',eqNewIcsNo:'',eqNewFundCluster:'',eqNewDateAcquired:''};
     Object.keys(defaults).forEach(function(id){ var el=document.getElementById(id); if(el) el.value=defaults[id]; });
     var unit=document.getElementById('eqNewUnit'); if(unit) unit.value=currentSession.facility || '';
+    try{ updateEquipCategorySuggestions(true); }catch(e){}
     var cond=document.getElementById('eqNewCondition'); if(cond) cond.value='Good';
 }
 function _eqValidateIcsCore(rec){
@@ -6042,6 +6407,7 @@ function _eqValidateIcsCore(rec){
     if(rec.unitCost >= COA_PPE_CAPITALIZATION_THRESHOLD) return 'Unit Cost is ₱50,000 or above. Under the current COA capitalization threshold, classify this as PPE/PAR instead of an ICS semi-expendable item.';
     if(!rec.estimatedUsefulLife || rec.estimatedUsefulLife < 2) return 'Estimated Useful Life must be more than one year for an ICS semi-expendable item.';
     if(!rec.assignedUnit) return 'Assigned Unit is required.';
+    if(!_eqCategoryAllowedForUnit(rec.category,rec.assignedUnit)) return 'The selected COA category does not match the Assigned Unit. Choose from the unit-bound category suggestions.';
     return '';
 }
 
@@ -6049,10 +6415,11 @@ function _eqValidateIcsCore(rec){
 function openEquipRegistryModal(){
     if(!canAccessEquipmentModule()) return;
     populateDatalist('eqUnitList', configData.facilities);
-    populateDatalist('eqCategoryList', ICS_SEMI_EXPENDABLE_CATEGORIES);
+    updateEquipCategorySuggestions();
     populateDatalist('eqMeasureUnitList', ICS_MEASURE_UNITS);
     var unitField = document.getElementById('eqNewUnit');
     if(unitField && !unitField.value) unitField.value = currentSession.facility || '';
+    updateEquipCategorySuggestions(true);
     renderEquipRegistry();
     document.getElementById('equipRegistryModal').style.display = 'flex';
 }
@@ -6181,23 +6548,11 @@ function renderEquipRegistry(){
     document.getElementById('eqRegistryTbl').innerHTML=html||'<tr><td colspan="15">No equipment registered yet. Add an ICS-aligned semi-expendable item above.</td></tr>';
 }
 
-function exportEquipRegistry(){
+async function exportEquipRegistry(){
     if(equipment.length===0){ alert('No equipment registered yet.'); return; }
-    if(typeof XLSX==='undefined') return;
-    var rows=equipment.map(function(e){
-        return {
-            InventoryItemNo:e.id, Description:e.name, Quantity:e.quantity||1, Unit:e.measureUnit||'unit',
-            UnitCost:_eqMoney(e.unitCost), TotalCost:e.totalCost!==undefined?_eqMoney(e.totalCost):_eqTotalCost(e),
-            EstimatedUsefulLife:e.estimatedUsefulLife||'', Category:e.category||'', SerialNo:e.serialNo||'',
-            ICSNo:e.icsNo||'', FundCluster:e.fundCluster||'', DateAcquired:e.dateAcquired||'', AssignedUnit:e.unit||'',
-            Condition:e.condition||'', Status:e.status||'', Remarks:e.remarks||'', RegisteredBy:e.addedBy||'', RegisteredOn:eqFmt(e.addedAt)
-        };
-    });
-    var ws=XLSX.utils.json_to_sheet(rows);
-    ws['!cols']=[{wch:20},{wch:36},{wch:10},{wch:10},{wch:14},{wch:14},{wch:18},{wch:38},{wch:20},{wch:18},{wch:14},{wch:14},{wch:26},{wch:18},{wch:14},{wch:36},{wch:24},{wch:20}];
-    if(typeof addSignatureToExcel==='function') addSignatureToExcel(ws);
-    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'ICS Equipment Registry');
-    XLSX.writeFile(wb,'ICS_Equipment_Registry.xlsx');
+    var rows=equipment.map(function(e,i){return {no:i+1,inventoryNo:e.id||'',description:e.name||'',quantity:e.quantity||1,unit:e.measureUnit||'unit',unitCost:_eqMoney(e.unitCost),totalCost:e.totalCost!==undefined?_eqMoney(e.totalCost):_eqTotalCost(e),usefulLife:e.estimatedUsefulLife||'',category:e.category||'',serialNo:e.serialNo||'',icsNo:e.icsNo||'',fundCluster:e.fundCluster||'',dateAcquired:e.dateAcquired||'',assignedUnit:e.unit||'',condition:e.condition||'',status:e.status||'',remarks:e.remarks||'',registeredBy:e.addedBy||'',registeredOn:eqFmt(e.addedAt)};});
+    var cols=[{key:'no',label:'No.',width:7,align:'center'},{key:'inventoryNo',label:'Inventory Item No.',width:20},{key:'description',label:'Description',width:34},{key:'quantity',label:'Qty',width:8,type:'number',align:'center'},{key:'unit',label:'Unit',width:10},{key:'unitCost',label:'Unit Cost',width:14,type:'money'},{key:'totalCost',label:'Total Cost',width:15,type:'money'},{key:'usefulLife',label:'Useful Life',width:13},{key:'category',label:'COA Category',width:34},{key:'serialNo',label:'Serial No.',width:18},{key:'icsNo',label:'ICS No.',width:18},{key:'fundCluster',label:'Fund Cluster',width:13},{key:'dateAcquired',label:'Date Acquired',width:14},{key:'assignedUnit',label:'Assigned Unit',width:24},{key:'condition',label:'Condition',width:16},{key:'status',label:'Status',width:14},{key:'remarks',label:'Remarks',width:34},{key:'registeredBy',label:'Registered By',width:22},{key:'registeredOn',label:'Registered On',width:20}];
+    if(typeof QLogExport!=='undefined'&&QLogExport.downloadTableXlsx) await QLogExport.downloadTableXlsx({title:'ICS-Aligned Equipment Registry',subtitle:'COA semi-expendable equipment inventory across QLog units',rows:rows,columns:cols,orientation:'landscape',sheetName:'ICS Equipment Registry',filename:'ICS_Equipment_Registry.xlsx',facility:'All Registered Units'});
 }
 
 /* ---------- ICS registry template + robust bulk import ---------- */
@@ -6221,8 +6576,13 @@ async function downloadEquipmentTemplate(){
         ]);
         guide['!cols']=[{wch:26},{wch:100}];
         var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Equipment Registry'); XLSX.utils.book_append_sheet(wb,guide,'Instructions');
+        var templateUnit=currentSession.facility||'';
+        var templateCategories=_eqUnitCategorySuggestions(templateUnit);
+        var templateUnits=templateUnit?[templateUnit]:((configData&&configData.facilities)?configData.facilities.slice():[]);
         await downloadWorkbookWithValidations(wb,'Equipment Registry',[
             {sqref:'D2:D2001',values:ICS_MEASURE_UNITS,allowBlank:false,promptTitle:'Unit of Measure',prompt:'Choose a common unit or type an appropriate unit.',errorTitle:'Invalid Unit',error:'Choose a Unit from the dropdown list.'},
+            {sqref:'H2:H2001',values:templateCategories,allowBlank:false,promptTitle:'COA Category',prompt:'Choose a COA semi-expendable category valid for the Assigned Unit.',errorTitle:'Invalid COA Category',error:'Choose a category from the dropdown that matches the current Assigned Unit.'},
+            {sqref:'M2:M2001',values:templateUnits,allowBlank:false,promptTitle:'Assigned Unit',prompt:'Use the current authorized QLog unit.',errorTitle:'Invalid Assigned Unit',error:'Assigned Unit must match the unit that downloaded this template.'},
             {sqref:'N2:N2001',values:EQ_CONDITIONS,allowBlank:true,promptTitle:'Condition',prompt:'Choose the condition.',errorTitle:'Invalid Condition',error:'Choose a Condition from the dropdown list.'},
             {sqref:'O2:O2001',values:EQ_IMPORT_STATUSES,allowBlank:true,promptTitle:'Status',prompt:'New items normally use AVAILABLE.',errorTitle:'Invalid Status',error:'Choose a Status from the dropdown list.'}
         ],'QLOG_ICS_Equipment_Registry_Template.xlsx');
@@ -6282,6 +6642,7 @@ function importEquipmentExcel(){
                 if(EQ_IMPORT_STATUSES.indexOf(status)===-1){ invalid++; problems.push('Row '+(idx+2)+' ('+id+'): invalid Status "'+status+'".'); return; }
                 if(!sameUnit(unit,currentSession.facility)){ skipped++; problems.push('Row '+(idx+2)+' ('+id+'): AssignedUnit must match your current unit ('+currentSession.facility+').'); return; }
 
+                if(/^books?$/i.test(String(rawCat||'').trim())){ invalid++; problems.push('Row '+(idx+2)+' ('+id+'): Books belong in the COA ICS-Style Library Inventory, not Equipment Registry.'); return; }
                 var cat=_eqNormalizeCategory(rawCat);
                 var isLegacyRow=!isIcsTemplate;
                 if(isLegacyRow){
@@ -6374,6 +6735,7 @@ async function exportAllEquipmentQrHTML(){
         '</div>';
     }
     var title = 'Equipment QR Labels — ' + (onlyMine ? (currentSession.facility || 'Current Unit') : 'All Units');
+    var brand = (window.getQlogBranding&&getQlogBranding())||{};
     var html = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
         '<meta name="viewport" content="width=device-width, initial-scale=1">' +
         '<title>' + eqEsc(title) + '</title><style>' +
@@ -6386,12 +6748,12 @@ async function exportAllEquipmentQrHTML(){
         '.qname{font-size:14px;font-weight:700;line-height:1.25;word-break:break-word;margin-bottom:4px}' +
         '.qid{font-family:monospace;font-size:12px;font-weight:700;color:#1e293b}' +
         '.qmeta{font-size:11px;color:#64748b}' +
-        '@media print{body{padding:8px}.noprint{display:none}}' +
+        '@media print{@page{size:A4 portrait;margin:8mm}body{padding:0}.noprint{display:none}}' +
         '</style></head><body>' +
-        '<h1>' + eqEsc(title) + '</h1>' +
+        '<div style="border-bottom:3px solid #1d4ed8;padding-bottom:7px;margin-bottom:10px;display:flex;align-items:center;gap:8px">'+(brand.logo?'<img src="'+eqEsc(brand.logo)+'" style="width:42px;height:42px;object-fit:contain">':'')+'<div><b style="font-size:18px">'+eqEsc(brand.schoolName||'QLog Pro')+'</b><div style="font-size:10px;color:#64748b">'+eqEsc([brand.address,brand.schoolYear?('SY '+brand.schoolYear):''].filter(Boolean).join(' • '))+'</div><div style="font-size:10px;font-weight:700;margin-top:2px">QLog Pro</div></div></div><h1>' + eqEsc(title) + '</h1>' +
         '<p class="sub">' + list.length + ' item(s) — generated ' + eqEsc(new Date().toLocaleString()) + '. Works offline; cut along the borders to label each item.</p>' +
         '<button class="noprint" onclick="window.print()" style="margin-bottom:14px;padding:8px 14px;cursor:pointer;">🖨 Print</button>' +
-        '<div class="grid">' + cards + '</div></body></html>';
+        '<div class="grid">' + cards + '</div><div style="text-align:center;font-size:9px;color:#64748b;margin-top:16px">QLog Pro • Powered by: Magallanes NHS Team Bitaug C.I. Projects</div></body></html>';
 
     var blob = new Blob([html], { type: 'text/html' });
     var url2 = URL.createObjectURL(blob);
@@ -6417,8 +6779,9 @@ async function printEquipmentQr(){
     if(!_eqQrCurrent) return;
     var url = await _qrDataURL(_eqQrCurrent.id, 300);
     var w = window.open('','','width=600,height=700');
-    w.document.write('<html><head><title>Equipment QR</title></head><body style="font-family:Arial;text-align:center;padding:40px;">' +
-        '<h2>' + eqEsc(_eqQrCurrent.name) + '</h2><img src="' + url + '" style="width:300px;height:300px;"><h3>' + eqEsc(_eqQrCurrent.id) + '</h3><p>' + eqEsc(_eqQrCurrent.unit) + '</p></body></html>');
+    var brand = (window.getQlogBranding&&getQlogBranding())||{};
+    w.document.write('<html><head><title>Equipment QR</title><style>@page{size:A4 portrait;margin:12mm}body{font-family:Arial;text-align:center;padding:20px;color:#0f172a}.brand{border-bottom:3px solid #1d4ed8;padding-bottom:8px;text-align:left;font-size:20px;font-weight:800}.card{margin:40px auto 0;max-width:430px;border:1px solid #cbd5e1;border-radius:12px;padding:28px}.meta{color:#64748b;font-size:12px}</style></head><body>' +
+        '<div class="brand">'+(brand.logo?'<img src="'+eqEsc(brand.logo)+'" style="width:42px;height:42px;object-fit:contain;vertical-align:middle;margin-right:8px">':'')+eqEsc(brand.schoolName||'QLog Pro')+'<div style="font-size:10px;color:#64748b;margin-top:2px">QLog Pro'+(brand.schoolYear?' • SY '+eqEsc(brand.schoolYear):'')+'</div></div><div class="card"><h2>' + eqEsc(_eqQrCurrent.name) + '</h2><img src="' + url + '" style="width:300px;height:300px;max-width:100%;"><h3>' + eqEsc(_eqQrCurrent.id) + '</h3><p class="meta">' + eqEsc(_eqQrCurrent.category||'') + '<br>' + eqEsc(_eqQrCurrent.unit) + '</p></div><div style="font-size:9px;color:#64748b;margin-top:18px">Powered by: Magallanes NHS Team Bitaug C.I. Projects</div></body></html>');
     w.document.close(); w.focus();
     setTimeout(function(){ w.print(); w.close(); }, 400);
 }
@@ -6827,40 +7190,19 @@ function loadEquipBorrowerHistory(){
 function closeEquipHistoryModal(){ document.getElementById('equipHistoryModal').style.display = 'none'; }
 
 /* ---------- Reports ---------- */
-function exportEquipLogs(){
-    var rows = eqFilteredLogs();
-    if(rows.length === 0){ alert('No equipment transactions to export for the current filters.'); return; }
-    if(typeof XLSX === 'undefined') return;
-    var out = rows.map(function(l){
-        return {
-            Ref:l.ref, Equipment:l.eqName, EquipmentID:l.eqId, Category:l.eqCategory||'', AssignedUnit:l.unit,
-            BorrowerID:l.borrowerId, BorrowerName:l.borrowerName, BorrowerCategory:l.borrowerCategory||'',
-            Status:l.s, Borrowed:l.borrowedAt, ExpectedReturn:l.expectedAt, ActualReturn:l.returnedAt||'',
-            OverdueDays:l.overdueDays||0, ConditionOut:l.conditionOut||'', ConditionIn:l.conditionIn||'',
-            Remarks:l.remarks||'', ReleasedBy:l.releasedBy||'', ReceivedBy:l.receivedBy||''
-        };
-    });
-    var ws = XLSX.utils.json_to_sheet(out);
-    if(typeof addSignatureToExcel === 'function') addSignatureToExcel(ws);
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Equipment Logs');
-    XLSX.writeFile(wb, 'Equipment_Borrowing_Logs.xlsx');
+async function exportEquipLogs(){
+    var list=eqFilteredLogs();
+    if(list.length===0){alert('No equipment transactions to export for the current filters.');return;}
+    var rows=list.map(function(l,i){return {no:i+1,ref:l.ref||'',equipment:l.eqName||'',equipmentId:l.eqId||'',category:l.eqCategory||'',assignedUnit:l.unit||'',borrowerId:l.borrowerId||'',borrower:l.borrowerName||'',borrowerCategory:l.borrowerCategory||'',status:l.s||'',borrowed:l.borrowedAt||'',expected:l.expectedAt||'',returned:l.returnedAt||'',overdue:Number(l.overdueDays)||0,conditionOut:l.conditionOut||'',conditionIn:l.conditionIn||'',remarks:l.remarks||'',releasedBy:l.releasedBy||'',receivedBy:l.receivedBy||''};});
+    var cols=[{key:'no',label:'No.',width:7,align:'center'},{key:'ref',label:'Reference',width:18},{key:'equipment',label:'Equipment',width:28},{key:'equipmentId',label:'Equipment ID',width:18},{key:'category',label:'COA Category',width:30},{key:'assignedUnit',label:'Assigned Unit',width:22},{key:'borrowerId',label:'Borrower ID',width:18},{key:'borrower',label:'Borrower Name',width:26},{key:'borrowerCategory',label:'Borrower Category',width:18},{key:'status',label:'Status',width:13},{key:'borrowed',label:'Borrowed',width:20},{key:'expected',label:'Expected Return',width:20},{key:'returned',label:'Actual Return',width:20},{key:'overdue',label:'Overdue Days',width:12,type:'number'},{key:'conditionOut',label:'Condition Out',width:16},{key:'conditionIn',label:'Condition In',width:16},{key:'remarks',label:'Remarks',width:32},{key:'releasedBy',label:'Released By',width:22},{key:'receivedBy',label:'Received By',width:22}];
+    if(typeof QLogExport!=='undefined'&&QLogExport.downloadTableXlsx) await QLogExport.downloadTableXlsx({title:'Equipment Borrowing & Returns Report',subtitle:(currentSession.facility||'All Units')+' equipment transaction history',rows:rows,columns:cols,orientation:'landscape',sheetName:'Equipment Logs',filename:'Equipment_Borrowing_Logs.xlsx'});
 }
 function printEquipLogs(){
-    var rows = eqFilteredLogs();
-    if(rows.length === 0){ alert('No equipment transactions to print for the current filters.'); return; }
-    var sigHtml = (typeof getSignatureBlock === 'function') ? getSignatureBlock() : '';
-    var w = window.open('','','width=1200,height=800');
-    var html = '<html><head><title>Equipment Borrowing Report</title><style>body{font-family:"Segoe UI",Arial,sans-serif;padding:25px;} h2,h4{text-align:center;margin:4px;color:#5b21b6;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #cbd5e1;padding:8px;text-align:center;font-size:12px;} th{background:#f1f5f9;color:#0f172a;}</style></head><body>';
-    html += '<h2>🧰 Equipment Borrowing &amp; Returns Report</h2>';
-    html += '<h4>' + eqEsc(currentSession.facility || '') + ' — In-Charge: ' + eqEsc(currentSession.inCharge || '') + '</h4>';
-    html += '<table><thead><tr><th>Ref</th><th>Equipment</th><th>ID</th><th>Borrower</th><th>Borrower ID</th><th>Status</th><th>Borrowed</th><th>Expected</th><th>Returned</th><th>Overdue Days</th><th>Condition In</th><th>Remarks</th></tr></thead><tbody>';
-    rows.forEach(function(l){
-        html += '<tr><td>' + eqEsc(l.ref) + '</td><td>' + eqEsc(l.eqName) + '</td><td>' + eqEsc(l.eqId) + '</td><td>' + eqEsc(l.borrowerName) + '</td><td>' + eqEsc(l.borrowerId) + '</td><td>' + eqEsc(l.s) + '</td><td>' + eqEsc(l.borrowedAt) + '</td><td>' + eqEsc(l.expectedAt) + '</td><td>' + eqEsc(l.returnedAt||'--') + '</td><td>' + (l.overdueDays||0) + '</td><td>' + eqEsc(l.conditionIn||'--') + '</td><td>' + eqEsc(l.remarks||'') + '</td></tr>';
-    });
-    html += '</tbody></table>' + sigHtml + '</body></html>';
-    w.document.write(html); w.document.close(); w.focus();
-    setTimeout(function(){ w.print(); w.close(); }, 300);
+    var list=eqFilteredLogs();
+    if(list.length===0){alert('No equipment transactions to print for the current filters.');return;}
+    var rows=list.map(function(l,i){return {no:i+1,ref:l.ref||'',equipment:l.eqName||'',equipmentId:l.eqId||'',borrower:l.borrowerName||'',borrowerId:l.borrowerId||'',status:l.s||'',borrowed:l.borrowedAt||'',expected:l.expectedAt||'',returned:l.returnedAt||'',overdue:Number(l.overdueDays)||0,conditionIn:l.conditionIn||'',remarks:l.remarks||''};});
+    var cols=[{key:'no',label:'No.',width:7,align:'center'},{key:'ref',label:'Ref',width:17},{key:'equipment',label:'Equipment',width:28},{key:'equipmentId',label:'ID',width:16},{key:'borrower',label:'Borrower',width:25},{key:'borrowerId',label:'Borrower ID',width:17},{key:'status',label:'Status',width:12},{key:'borrowed',label:'Borrowed',width:18},{key:'expected',label:'Expected',width:18},{key:'returned',label:'Returned',width:18},{key:'overdue',label:'Overdue Days',width:11,type:'number'},{key:'conditionIn',label:'Condition In',width:15},{key:'remarks',label:'Remarks',width:30}];
+    if(typeof QLogExport!=='undefined'&&QLogExport.printTable) QLogExport.printTable({title:'Equipment Borrowing & Returns Report',subtitle:(currentSession.facility||'')+' — In-Charge: '+(currentSession.inCharge||''),rows:rows,columns:cols,orientation:'landscape'});
 }
 
 /* ---------- Wiring into the existing app lifecycle ---------- */
@@ -6935,6 +7277,8 @@ window.addEventListener('load', function(){
 
 <script>
 /* ===== Offline-first runtime: service worker, status indicator, diagnostics ===== */
+try{ _libMigrateBooks(); _libPopulateSelectors(); }catch(e){ console.warn('[library-ics-init]',e); }
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function(){
         navigator.serviceWorker.register('./service-worker.js', { scope: './' })
@@ -7055,5 +7399,6 @@ async function qlogOfflineDiagnostic(silent){
 }
 window.qlogOfflineDiagnostic = qlogOfflineDiagnostic;
 </script>
+<script src="./qlog-ui-overhaul.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* =====================================================================
-   QLog Pro Ultimate - Offline-first Service Worker
+   QLog Pro - Offline-first Service Worker
    ---------------------------------------------------------------------
    - Precaches the complete application (shell, libs, face models, fonts,
      icons) so the installed desktop PWA runs with NO internet at all.
@@ -10,11 +10,14 @@
      service-worker update.
    ===================================================================== */
 
-const CACHE_NAME = "qlogpro-offline-v10";
+const CACHE_NAME = "qlogpro-offline-v13";
 
 const PRECACHE_URLS = [
   "./",
   "./index.html",
+  "./qlog-export-helper.js",
+  "./qlog-ui-overhaul.css",
+  "./qlog-ui-overhaul.js",
   "./manifest.json",
   "./install-gate.js",
   "./fonts/Inter-400-latin-ext.woff2",

@@ -1,11 +1,11 @@
 {
-  "name": "QLog Pro Ultimate",
+  "name": "QLog Pro",
   "short_name": "QLog Pro",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "theme_color": "#3157d5",
   "icons": [
     {
       "src": "icons/icon-192.png",
