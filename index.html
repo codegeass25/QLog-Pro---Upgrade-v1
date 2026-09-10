@@ -2700,9 +2700,6 @@ var VISITOR_FACE_GUIDE_TOP_RATIO = 0.06;
 var VISITOR_FACE_GUIDE_BOTTOM_RATIO = 0.92;
 var VISITOR_FACE_MIN_SHARPNESS = 24;
 var VISITOR_FACE_QUALITY_STABLE_FRAMES = 2;
-// Face matching always gets priority over identity fallback. QLog only declares a
-// visitor unrecognized after several CONSECUTIVE clear-face frames fail to match.
-var VISITOR_UNKNOWN_FACE_STABLE_FRAMES = 6;
 var _visitorFaceGuidanceToastAt = 0;
 
 /* ---------- Offline Valid ID / OCR verification configuration ----------
@@ -2877,14 +2874,14 @@ async function _faceRecognitionTick(){
         }catch(_e){}
     }
     if(dets.length>1){
-        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false; st.faceQualityStableFrames=0; st.faceQualifiedAfterReason=false; _stableMatchCounter=0; _unknownFaceStreak=0;
+        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false; st.faceQualityStableFrames=0; st.faceQualifiedAfterReason=false; _stableMatchCounter=0;
         _setFaceHud('error','⚠ Multiple faces detected — only the visitor should be visible.',0);
         setVisitorFlowStatus('⚠ <b>MULTIPLE FACES DETECTED</b><br>Please make sure only the visitor is visible in the Camera Box.','warn');
         if(st.reason) _visitorFaceToast('Only one visitor face should be inside the Camera Box.');
         return;
     }
     if(dets.length===0){
-        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false; st.faceQualityStableFrames=0; st.faceQualifiedAfterReason=false; _stableMatchCounter=0; _unknownFaceStreak=0;
+        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false; st.faceQualityStableFrames=0; st.faceQualifiedAfterReason=false; _stableMatchCounter=0;
         _setFaceHud('detecting','Searching for a complete face…',18);
         if(st.reason&&!st.logged){
             setVisitorFlowStatus('⚠ <b>FULL FACE REQUIRED</b><br>Please position your entire face clearly inside the Camera Box.','warn');
@@ -2894,7 +2891,7 @@ async function _faceRecognitionTick(){
     }
     var det=dets[0], quality=_assessVisitorFaceQuality(video,det);
     if(!quality.ok){
-        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false; st.faceQualityStableFrames=0; st.faceQualifiedAfterReason=false; _stableMatchCounter=0; _unknownFaceStreak=0;
+        st.faceDetected=false; st.faceDescriptor=null; st.faceQualityOk=false; st.faceQualityStableFrames=0; st.faceQualifiedAfterReason=false; _stableMatchCounter=0;
         _setFaceHud('error',quality.message,0);
         setVisitorFlowStatus('⚠ <b>FACE NOT READY</b><br>'+quality.message,'warn');
         if(st.reason) _visitorFaceToast(quality.message);
@@ -2919,12 +2916,7 @@ async function _faceRecognitionTick(){
     var confidence=Math.max(0,Math.min(1,1-(best.dist/0.9))), margin=(second===Infinity)?0.1:(second-best.dist);
     var matched=best.name&&best.dist<=FACE_MATCH_THRESHOLD&&margin>=0.04;
     if(matched){
-        // Matching has priority. Any valid candidate match cancels the unknown-face
-        // fallback counter while QLog waits for the required stable match frames.
-        _unknownFaceStreak=0;
-        // Stable recognition must be consecutive frames of the SAME registered face.
-        if(_lastFaceMatchName===best.name) _stableMatchCounter++;
-        else { _lastFaceMatchName=best.name; _stableMatchCounter=1; }
+        _stableMatchCounter++;
         _setFaceHud('detecting','Matching: '+best.name+' ('+(confidence*100).toFixed(0)+'%)',confidence*100);
         if(_stableMatchCounter>=FACE_MATCH_STABLE_FRAMES){
             if(!st.faceRecognized){
@@ -2938,33 +2930,23 @@ async function _faceRecognitionTick(){
                         setVisitorName(best.name,'AI face recognition (ID-verified profile)','face');
                         setVisitorFlowStatus('✓ Visitor identified: <b>'+best.name+'</b> (ID-verified profile). Select a <b>Reason for Visit</b>; QLog will then require a fresh clear face before saving.','ok');
                         try{closeValidIdScreen();}catch(_e){}
-                    }else{
-                        // Face recognition is the authoritative source for a returning visitor name.
-                        // Show the matched name first, then preserve the required MANUAL_NO_ID re-verification flow.
-                        st.nameSource='MANUAL'; _lastFaceMatchName=best.name;
-                        setVisitorName(best.name,'AI face recognition (manual profile — re-verification required)','face');
-                        _requireIdRecheckForReturningVisitor();
-                    }
+                    }else{ st.nameSource='MANUAL'; _lastFaceMatchName=best.name; _requireIdRecheckForReturningVisitor(); }
                 }else{
                     setVisitorFlowStatus('✓ Visitor identified: <b>'+(st.name||best.name)+'</b>. Select a <b>Reason for Visit</b>; a fresh clear face is required before saving.','ok');
                 }
             }else _setFaceHud('matched','✓ '+best.name,confidence*100);
         }
     }else{
-        _stableMatchCounter=0; _lastFaceMatchName=null;
+        _stableMatchCounter=0;
         if(st.idVerified||st.manualNoId){
             _setFaceHud('detecting','Clear face verified for '+(st.name||'visitor'),85);
             if(st.reason) setVisitorFlowStatus('✓ Clear full face verified for <b>'+(st.name||'visitor')+'</b>. Preparing automatic log…','ok');
             else setVisitorFlowStatus('✓ Face ready for <b>'+(st.name||'visitor')+'</b>. Select a <b>Reason for Visit</b>.','ok');
         }else{
             _unknownFaceStreak++;
-            var remaining=Math.max(0,VISITOR_UNKNOWN_FACE_STABLE_FRAMES-_unknownFaceStreak);
-            _setFaceHud('detecting', remaining>0 ? 'Checking registered faces first…' : 'Face not found in visitor registry', Math.min(80,45+(_unknownFaceStreak*5)));
-            // IMPORTANT: QR history does not decide identity and cannot trigger the prompt early.
-            // Only after several consecutive CLEAR face frames fail every registered-face match
-            // may QLog classify the person as unrecognized and ask for Valid ID / Manual entry.
-            if(_unknownFaceStreak>=VISITOR_UNKNOWN_FACE_STABLE_FRAMES&&!st.faceRecognized&&!st.idVerified&&!st.manualNoId&&!_idScanActive&&!document.getElementById('validIdOverlay').classList.contains('open')){
-                setVisitorFlowStatus('No registered face match found. Choose <b>PRESENT VALID ID</b> or <b>NO VALID ID AVAILABLE</b>.','warn');
+            _setFaceHud('detecting','Unrecognized visitor — identity verification required',45);
+            if(_unknownFaceStreak>=3&&!st.idVerified&&!st.manualNoId&&!_idScanActive&&!document.getElementById('validIdOverlay').classList.contains('open')){
+                setVisitorFlowStatus('Visitor not recognized. Choose <b>PRESENT VALID ID</b> or <b>NO VALID ID AVAILABLE</b>.','warn');
                 openIdentityVerificationScreen(st.qr);
             }
         }
@@ -3014,8 +2996,7 @@ function _requireIdRecheckForReturningVisitor(){
     st.idVerified = false;
     st.manualNoId = false;
     st.idVerificationEvidence = null;
-    // Keep the FACE-MATCHED name visible at the choice stage. The name is cleared only after
-    // the operator explicitly chooses Valid ID or No Valid ID, where re-verification begins.
+    setVisitorName('', '', 'clear');
     openIdentityVerificationScreen(st.qr);
     setVisitorFlowStatus('Visitor recognized, but the name was previously entered manually.<br>Choose <b>PRESENT VALID ID</b> or <b>NO VALID ID AVAILABLE</b>.', 'warn');
 }
@@ -3031,15 +3012,22 @@ function startVisitorSession(code){
         setVisitorFlowStatus('Registered visitor QR detected. Please look at the camera for AI face recognition.', '');
     } else {
         visitorRegistrationState.mode = 'NEW';
-        setVisitorFlowStatus('Please look at the camera. QLog will match the face against registered visitors first.', '');
+        setVisitorFlowStatus('New visitor. Please look at the camera \u2014 identity verification will start automatically.', '');
     }
     showVisitorTab();
     showTab('visitors', document.querySelector('#visitorTabBtn'));
     startVisitorCamera();
-    // Do not use a QR/time-based fallback here. The face engine must get first priority
-    // and is the only normal path allowed to decide whether this is a registered visitor.
-    _visitorIdentifyDeadline = 0;
-    toast('Visitor QR scanned \u2014 matching face first', 'yellow');
+    _visitorIdentifyDeadline = Date.now() + (prior.length ? 15000 : 8000);
+    // Safety net: if the visitor is never recognized, fall back to Valid ID verification.
+    setTimeout(function(){
+        var st = visitorRegistrationState;
+        if (st.qr !== code || st.logged) return;
+        if (!st.faceRecognized && !st.idVerified && !st.manualNoId && !document.getElementById('validIdOverlay').classList.contains('open')){
+            setVisitorFlowStatus('Visitor not recognized. Choose <b>PRESENT VALID ID</b> or <b>NO VALID ID AVAILABLE</b>.', 'warn');
+            openIdentityVerificationScreen(code);
+        }
+    }, prior.length ? 15000 : 8000);
+    toast('Visitor QR scanned \u2014 starting verification', 'yellow');
 }
 
 async function startVisitorCamera(){
@@ -3060,14 +3048,6 @@ async function startVisitorCamera(){
             await _rebuildFaceDescriptorCache();
             if (faceRecogInterval) clearInterval(faceRecogInterval);
             faceRecogInterval = setInterval(_faceRecognitionTick, 600);
-        } else {
-            // Exceptional fallback only: recognition cannot run because the local models failed.
-            // Under normal operation the ID/Manual choice is reached only after face matching fails.
-            var st=visitorRegistrationState;
-            if(st.qr&&!st.logged&&!st.idVerified&&!st.manualNoId){
-                setVisitorFlowStatus('Face recognition is unavailable on this device. Choose an identity verification method.','warn');
-                openIdentityVerificationScreen(st.qr);
-            }
         }
     }catch(err){
         console.warn('camera error', err);
@@ -7431,21 +7411,6 @@ if ('serviceWorker' in navigator) {
     }
     if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 6000 });
     else setTimeout(warm, 3000);
-})();
-
-
-/* Warm the local face-recognition networks while the device is idle. This does
-   not identify or populate any visitor; it only removes first-scan model-load delay. */
-(function(){
-    function warmFaceModels(){
-        try {
-            if (typeof _loadFaceApiModels === 'function'){
-                _loadFaceApiModels().catch(function(e){ console.warn('[face-api] preload failed:', e && e.message); });
-            }
-        } catch(e){}
-    }
-    if ('requestIdleCallback' in window) requestIdleCallback(warmFaceModels, { timeout: 4500 });
-    else setTimeout(warmFaceModels, 1800);
 })();
 
 /* Online / Offline status indicator (offline is a supported mode, not an error) */
