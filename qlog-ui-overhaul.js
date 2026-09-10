@@ -161,7 +161,6 @@ function renderScope(){
 }
 function assignLegacy(){if(!window.QLogScope)return;var l=QLogScope.legacyCounts();if(!l.total){if(window.toast)toast('No legacy unscoped records found.','blue');return;}if(!confirm('Assign ALL '+l.total+' unscoped historical log(s) to '+QLogScope.unitLabel()+'? This changes their reporting ownership.'))return;try{var n=QLogScope.assignLegacyToCurrent();renderScope();if(window.renderReports)renderReports();if(window.toast)toast('✅ '+n+' historical record(s) assigned to '+QLogScope.unitLabel()+'.','green');}catch(e){if(window.toast)toast('Unable to assign legacy records: '+e.message,'red');}}
 
-
 function ensureOperationalResetModal(){
   if(document.getElementById('qOperationalResetModal')) return;
   var m=document.createElement('div');
