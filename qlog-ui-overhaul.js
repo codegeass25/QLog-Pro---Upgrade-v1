@@ -74,7 +74,8 @@ function ensureSettings(){
     </div>\
     <div class="qlog-classic-settings-panel" data-panel="scope">\
       <div class="card"><h3>🏢 Current Unit / Report Scope</h3><p style="font-size:13px;color:#64748b;">Normal users only see report types and report records allowed for their assigned facility. Old records without facility ownership remain isolated until explicitly assigned.</p><div id="qClassicScopeGrid" class="qlog-classic-scope-grid"></div>\
-      <hr><h4>Legacy Unscoped Records</h4><div id="qClassicLegacyGrid" class="qlog-classic-scope-grid"></div><button id="qClassicAssignLegacy" style="background:#d97706;">Assign All Unscoped Logs to Current Unit</button></div>\
+      <hr><h4>Legacy Unscoped Records</h4><div id="qClassicLegacyGrid" class="qlog-classic-scope-grid"></div><button id="qClassicAssignLegacy" style="background:#d97706;">Assign All Unscoped Logs to Current Unit</button>\
+      <hr><h4>🔐 Superadmin Maintenance</h4><p style="font-size:13px;color:#64748b;max-width:820px;">Delete operational QLog records while keeping the installation activation, Superadmin password, and school branding. Superadmin password re-entry is required.</p><button id="qClassicResetOperational" style="background:#b91c1c;">🗑 Reset Operational Data</button></div>\
     </div>\
     <div class="qlog-classic-settings-panel" data-panel="about">\
       <div class="card"><h3>'+FIXED_PRODUCT+'</h3><p>Offline-first school logging, visitor verification, library circulation, COA ICS inventory, equipment custody, and unit-scoped reporting.</p><div class="qlog-classic-fixed-brand"><b>Product:</b> '+FIXED_PRODUCT+'<br><b>Credit:</b> '+FIXED_CREDIT+'<br><b>Deployment:</b> Pure PWA / local-first<br><b>UI Mode:</b> Original QLog Classic</div></div>\
@@ -94,6 +95,8 @@ function ensureSettings(){
   document.querySelectorAll('.qBrandSaveAny').forEach(function(x){x.onclick=function(){saveBranding(readBrandFields());};});
   ['qBrandSchoolName','qBrandAddress','qBrandSchoolYear'].forEach(function(id){var e=document.getElementById(id);if(e)e.oninput=updatePreview;});
   var as=document.getElementById('qClassicAssignLegacy'); if(as)as.onclick=assignLegacy;
+  var ro=document.getElementById('qClassicResetOperational'); if(ro)ro.onclick=openOperationalResetAuth;
+  ensureOperationalResetModal();
   loadBrandFields(); renderScope();
 }
 
@@ -157,6 +160,50 @@ function renderScope(){
   var l=QLogScope.legacyCounts(),lg=document.getElementById('qClassicLegacyGrid');if(lg)lg.innerHTML=[['Total Unscoped',l.total],['Attendance',l.attendance],['Visitors',l.visitors],['Audit',l.audit]].map(function(x){return '<div class="qlog-classic-scope-item"><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>';}).join('');
 }
 function assignLegacy(){if(!window.QLogScope)return;var l=QLogScope.legacyCounts();if(!l.total){if(window.toast)toast('No legacy unscoped records found.','blue');return;}if(!confirm('Assign ALL '+l.total+' unscoped historical log(s) to '+QLogScope.unitLabel()+'? This changes their reporting ownership.'))return;try{var n=QLogScope.assignLegacyToCurrent();renderScope();if(window.renderReports)renderReports();if(window.toast)toast('✅ '+n+' historical record(s) assigned to '+QLogScope.unitLabel()+'.','green');}catch(e){if(window.toast)toast('Unable to assign legacy records: '+e.message,'red');}}
+
+
+function ensureOperationalResetModal(){
+  if(document.getElementById('qOperationalResetModal')) return;
+  var m=document.createElement('div');
+  m.id='qOperationalResetModal';
+  m.style.cssText='display:none;position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.62);align-items:center;justify-content:center;padding:18px;';
+  m.innerHTML='<div role="dialog" aria-modal="true" aria-labelledby="qOperationalResetTitle" style="width:min(520px,96vw);background:#fff;border-radius:16px;padding:22px;box-shadow:0 24px 70px rgba(15,23,42,.28);">'
+    +'<h3 id="qOperationalResetTitle" style="margin:0 0 8px;color:#991b1b;">🗑 Reset Operational Data</h3>'
+    +'<p style="margin:0 0 14px;color:#475569;font-size:13px;line-height:1.55;">This deletes operational records across QLog Pro. Installation activation, the Superadmin password, and school branding are retained.</p>'
+    +'<label for="qOperationalResetPassword" style="display:block;font-weight:700;margin-bottom:6px;">Superadmin Password</label>'
+    +'<input id="qOperationalResetPassword" type="password" autocomplete="current-password" style="width:100%;box-sizing:border-box;margin-bottom:8px;" placeholder="Enter Superadmin password">'
+    +'<div id="qOperationalResetError" style="min-height:20px;color:#b91c1c;font-size:12px;font-weight:700;"></div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px;">'
+    +'<button id="qOperationalResetCancel" type="button" style="background:#64748b;">Cancel</button>'
+    +'<button id="qOperationalResetConfirm" type="button" style="background:#b91c1c;">Verify & Continue</button>'
+    +'</div></div>';
+  document.body.appendChild(m);
+  var cancel=document.getElementById('qOperationalResetCancel'); if(cancel)cancel.onclick=closeOperationalResetAuth;
+  var confirmBtn=document.getElementById('qOperationalResetConfirm'); if(confirmBtn)confirmBtn.onclick=submitOperationalResetAuth;
+  var pw=document.getElementById('qOperationalResetPassword'); if(pw)pw.addEventListener('keydown',function(e){if(e.key==='Enter')submitOperationalResetAuth();});
+  m.addEventListener('click',function(e){if(e.target===m)closeOperationalResetAuth();});
+}
+function openOperationalResetAuth(){
+  ensureOperationalResetModal();
+  var m=document.getElementById('qOperationalResetModal'),pw=document.getElementById('qOperationalResetPassword'),err=document.getElementById('qOperationalResetError');
+  if(pw)pw.value=''; if(err)err.textContent=''; if(m)m.style.display='flex';
+  setTimeout(function(){if(pw)pw.focus();},80);
+}
+function closeOperationalResetAuth(){
+  var m=document.getElementById('qOperationalResetModal'),pw=document.getElementById('qOperationalResetPassword'),err=document.getElementById('qOperationalResetError');
+  if(pw)pw.value=''; if(err)err.textContent=''; if(m)m.style.display='none';
+}
+function submitOperationalResetAuth(){
+  var pw=document.getElementById('qOperationalResetPassword'),err=document.getElementById('qOperationalResetError');
+  var value=pw?pw.value:'';
+  if(!value){if(err)err.textContent='Enter the Superadmin password.';return;}
+  var ok=false; try{ok=typeof window.verifySuperPassword==='function'&&window.verifySuperPassword(value);}catch(e){ok=false;}
+  value=''; if(pw)pw.value='';
+  if(!ok){if(err)err.textContent='Incorrect Superadmin password. Access denied.';if(window.toast)toast('❌ Operational reset denied.','red');return;}
+  closeOperationalResetAuth();
+  if(typeof window.resetDatabase!=='function'){if(window.toast)toast('Reset routine is unavailable.','red');return;}
+  window.resetDatabase();
+}
 
 function patchLifecycle(){
   if(window.finalizeStartup&&!window.finalizeStartup.__qclassic){var oldF=window.finalizeStartup;var f=function(){var r=oldF.apply(this,arguments);setTimeout(function(){applyVisibility();applyBranding();renderScope();},20);return r;};f.__qclassic=true;window.finalizeStartup=f;}

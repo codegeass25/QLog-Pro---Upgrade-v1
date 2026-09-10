@@ -2930,7 +2930,13 @@ async function _faceRecognitionTick(){
                         setVisitorName(best.name,'AI face recognition (ID-verified profile)','face');
                         setVisitorFlowStatus('✓ Visitor identified: <b>'+best.name+'</b> (ID-verified profile). Select a <b>Reason for Visit</b>; QLog will then require a fresh clear face before saving.','ok');
                         try{closeValidIdScreen();}catch(_e){}
-                    }else{ st.nameSource='MANUAL'; _lastFaceMatchName=best.name; _requireIdRecheckForReturningVisitor(); }
+                    }else{
+                        // Face recognition is the authoritative source for a returning visitor name.
+                        // Show the matched name first, then preserve the required MANUAL_NO_ID re-verification flow.
+                        st.nameSource='MANUAL'; _lastFaceMatchName=best.name;
+                        setVisitorName(best.name,'AI face recognition (manual profile — re-verification required)','face');
+                        _requireIdRecheckForReturningVisitor();
+                    }
                 }else{
                     setVisitorFlowStatus('✓ Visitor identified: <b>'+(st.name||best.name)+'</b>. Select a <b>Reason for Visit</b>; a fresh clear face is required before saving.','ok');
                 }
@@ -2945,7 +2951,11 @@ async function _faceRecognitionTick(){
         }else{
             _unknownFaceStreak++;
             _setFaceHud('detecting','Unrecognized visitor — identity verification required',45);
-            if(_unknownFaceStreak>=3&&!st.idVerified&&!st.manualNoId&&!_idScanActive&&!document.getElementById('validIdOverlay').classList.contains('open')){
+            // A genuinely new QR should move to ID/Manual as soon as one reliable full-face
+            // assessment confirms there is no registered face match. Returning QR sessions keep
+            // the original multi-frame tolerance to avoid a premature fallback during recognition.
+            var unknownFaceThreshold = (st.mode === 'NEW') ? 1 : 3;
+            if(_unknownFaceStreak>=unknownFaceThreshold&&!st.idVerified&&!st.manualNoId&&!_idScanActive&&!document.getElementById('validIdOverlay').classList.contains('open')){
                 setVisitorFlowStatus('Visitor not recognized. Choose <b>PRESENT VALID ID</b> or <b>NO VALID ID AVAILABLE</b>.','warn');
                 openIdentityVerificationScreen(st.qr);
             }
@@ -2996,7 +3006,8 @@ function _requireIdRecheckForReturningVisitor(){
     st.idVerified = false;
     st.manualNoId = false;
     st.idVerificationEvidence = null;
-    setVisitorName('', '', 'clear');
+    // Keep the FACE-MATCHED name visible at the choice stage. The name is cleared only after
+    // the operator explicitly chooses Valid ID or No Valid ID, where re-verification begins.
     openIdentityVerificationScreen(st.qr);
     setVisitorFlowStatus('Visitor recognized, but the name was previously entered manually.<br>Choose <b>PRESENT VALID ID</b> or <b>NO VALID ID AVAILABLE</b>.', 'warn');
 }
@@ -7411,6 +7422,21 @@ if ('serviceWorker' in navigator) {
     }
     if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 6000 });
     else setTimeout(warm, 3000);
+})();
+
+
+/* Warm the local face-recognition networks while the device is idle. This does
+   not identify or populate any visitor; it only removes first-scan model-load delay. */
+(function(){
+    function warmFaceModels(){
+        try {
+            if (typeof _loadFaceApiModels === 'function'){
+                _loadFaceApiModels().catch(function(e){ console.warn('[face-api] preload failed:', e && e.message); });
+            }
+        } catch(e){}
+    }
+    if ('requestIdleCallback' in window) requestIdleCallback(warmFaceModels, { timeout: 4500 });
+    else setTimeout(warmFaceModels, 1800);
 })();
 
 /* Online / Offline status indicator (offline is a supported mode, not an error) */
